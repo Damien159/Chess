@@ -1,23 +1,18 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
+<div class="min-h-screen bg-slate-950 text-slate-100">
+    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-6 py-4">
+        <a href="/" class="text-xl font-semibold">&#9823; ChessPlatform</a>
         <NavMenu />
-    </div>
+    </header>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
+    <main class="mx-auto max-w-6xl px-6 py-10">
+        @Body
     </main>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
     <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
+    <span class="dismiss">&#128473;</span>
 </div>
