@@ -1,0 +1,22 @@
+﻿@page "/play"
+@rendermode InteractiveServer
+@using Chess.Components.Game
+@using Chess.Models
+
+<PageTitle>Spielen</PageTitle>
+
+<div class="flex flex-col items-center gap-6">
+    <h1 class="text-2xl font-bold">Spielen</h1>
+
+    <ChessBoard Position="_board" Flipped="_flipped" />
+
+    <button @onclick="() => _flipped = !_flipped"
+            class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
+        Brett drehen
+    </button>
+</div>
+
+@code {
+    private readonly Board _board = Board.CreateStartPosition();
+    private bool _flipped;
+}
