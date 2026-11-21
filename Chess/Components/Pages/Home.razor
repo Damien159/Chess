@@ -1,7 +1,28 @@
 ﻿@page "/"
+@rendermode InteractiveServer
 
-<PageTitle>Home</PageTitle>
+<PageTitle>ChessPlatform</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="mx-auto max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center shadow-xl">
+    <h1 class="text-3xl font-bold">ChessPlatform</h1>
+    <p class="mt-3 text-slate-400">Willkommen auf meiner Schachplattform!</p>
 
-Welcome to your new app.
+    <button @onclick="StartGame"
+            class="mt-6 rounded-xl bg-emerald-600 px-6 py-3 font-medium text-white hover:bg-emerald-500">
+        Neue Partie starten
+    </button>
+
+    @if (gameStarted)
+    {
+        <p class="mt-6 text-emerald-400">Deine erste Schachpartie wurde gestartet!</p>
+    }
+</div>
+
+@code {
+    private bool gameStarted = false;
+
+    private void StartGame()
+    {
+        gameStarted = true;
+    }
+}
