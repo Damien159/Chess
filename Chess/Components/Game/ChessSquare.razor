@@ -1,11 +1,16 @@
 ﻿@using Chess.Models
 
 <div @onclick="() => OnClick.InvokeAsync()"
-     class="relative flex aspect-square cursor-pointer items-center justify-center @(IsLight ? "bg-board-light" : "bg-board-dark") @(IsSelected ? "ring-4 ring-inset ring-yellow-400" : "")">
+     class="relative flex aspect-square cursor-pointer items-center justify-center @(IsLight ? "bg-board-light" : "bg-board-dark") @(IsSelected ? "ring-4 ring-inset ring-yellow-400" : "") @(IsTarget && Piece is not null ? "ring-4 ring-inset ring-red-500/70" : "")">
 
     @if (Piece is not null)
     {
         <ChessPiece Piece="Piece" />
+    }
+
+    @if (IsTarget && Piece is null)
+    {
+        <span class="pointer-events-none absolute h-4 w-4 rounded-full bg-black/25"></span>
     }
 
     @if (RankLabel is not null)
@@ -23,6 +28,7 @@
     [Parameter] public Piece? Piece { get; set; }
     [Parameter] public bool IsLight { get; set; }
     [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public bool IsTarget { get; set; }
     [Parameter] public string? RankLabel { get; set; }
     [Parameter] public string? FileLabel { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
