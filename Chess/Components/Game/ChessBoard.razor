@@ -1,0 +1,42 @@
+﻿@using Chess.Models
+
+<div class="grid w-full max-w-[560px] grid-cols-8 overflow-hidden rounded-xl shadow-2xl">
+    @for (var row = 0; row < 8; row++)
+    {
+        for (var col = 0; col < 8; col++)
+        {
+            var r = Flipped ? 7 - row : row;
+            var f = Flipped ? 7 - col : col;
+            <ChessSquare Piece="Position[r, f]"
+                         IsLight="(r + f) % 2 == 0"
+                         IsSelected="IsSelected(r, f)"
+                         RankLabel="@(col == 0 ? (8 - r).ToString() : null)"
+                         FileLabel="@(row == 7 ? ((char)('a' + f)).ToString() : null)"
+                         OnClick="() => SelectSquare(r, f)" />
+        }
+    }
+</div>
+
+@code {
+    private (int Rank, int File)? _selected;
+
+    [Parameter, EditorRequired]
+    public Board Position { get; set; } = default!;
+
+    [Parameter]
+    public bool Flipped { get; set; }
+
+    private bool IsSelected(int rank, int file) =>
+        _selected is { } s && s.Rank == rank && s.File == file;
+
+    private void SelectSquare(int rank, int file)
+    {
+        if (IsSelected(rank, file))
+        {
+            _selected = null;
+            return;
+        }
+
+        _selected = Position[rank, file] is null ? null : (rank, file);
+    }
+}
