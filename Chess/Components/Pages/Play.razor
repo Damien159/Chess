@@ -8,15 +8,27 @@
 <div class="flex flex-col items-center gap-6">
     <h1 class="text-2xl font-bold">Spielen</h1>
 
-    <ChessBoard Position="_board" Flipped="_flipped" />
+    <p class="text-slate-300">
+        Am Zug: <span class="font-semibold text-white">@(_game.CurrentTurn == PieceColor.White ? "Weiß" : "Schwarz")</span>
+    </p>
 
-    <button @onclick="() => _flipped = !_flipped"
-            class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
-        Brett drehen
-    </button>
+    <ChessBoard @key="_game" Game="_game" Flipped="_flipped" OnMoved="StateHasChanged" />
+
+    <div class="flex gap-3">
+        <button @onclick="() => _flipped = !_flipped"
+                class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
+            Brett drehen
+        </button>
+        <button @onclick="NewGame"
+                class="rounded-xl bg-emerald-600 px-4 py-2 text-sm hover:bg-emerald-500">
+            Neue Partie
+        </button>
+    </div>
 </div>
 
 @code {
-    private readonly Board _board = Board.CreateStartPosition();
+    private Game _game = new();
     private bool _flipped;
+
+    private void NewGame() => _game = new Game();
 }
