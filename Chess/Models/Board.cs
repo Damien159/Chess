@@ -13,6 +13,17 @@ public class Board
 
     public Piece? this[int rank, int file] => _squares[rank, file];
 
+    public Piece? this[Square square] => _squares[square.Rank, square.File];
+
+    public static bool IsInside(int rank, int file) =>
+        rank is >= 0 and < 8 && file is >= 0 and < 8;
+
+    public void Move(Square from, Square to)
+    {
+        _squares[to.Rank, to.File] = _squares[from.Rank, from.File];
+        _squares[from.Rank, from.File] = null;
+    }
+
     public static Board CreateStartPosition()
     {
         var board = new Board();
