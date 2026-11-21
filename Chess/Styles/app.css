@@ -1,0 +1,7 @@
+﻿@import "tailwindcss";
+@source "../Components";
+
+@theme {
+    --color-board-light: #eeeed2;
+    --color-board-dark: #769656;
+}
