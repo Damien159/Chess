@@ -1,0 +1,31 @@
+﻿@using Chess.Models
+
+<div @onclick="() => OnClick.InvokeAsync()"
+     class="relative flex aspect-square cursor-pointer items-center justify-center @(IsLight ? "bg-board-light" : "bg-board-dark") @(IsSelected ? "ring-4 ring-inset ring-yellow-400" : "")">
+
+    @if (Piece is not null)
+    {
+        <ChessPiece Piece="Piece" />
+    }
+
+    @if (RankLabel is not null)
+    {
+        <span class="absolute left-0.5 top-0 text-[10px] font-semibold @LabelColor">@RankLabel</span>
+    }
+
+    @if (FileLabel is not null)
+    {
+        <span class="absolute bottom-0 right-0.5 text-[10px] font-semibold @LabelColor">@FileLabel</span>
+    }
+</div>
+
+@code {
+    [Parameter] public Piece? Piece { get; set; }
+    [Parameter] public bool IsLight { get; set; }
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public string? RankLabel { get; set; }
+    [Parameter] public string? FileLabel { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private string LabelColor => IsLight ? "text-board-dark" : "text-board-light";
+}
