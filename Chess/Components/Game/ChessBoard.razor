@@ -7,9 +7,10 @@
         {
             var r = Flipped ? 7 - row : row;
             var f = Flipped ? 7 - col : col;
-            <ChessSquare Piece="Position[r, f]"
+            <ChessSquare Piece="Game.Board[r, f]"
                          IsLight="(r + f) % 2 == 0"
                          IsSelected="IsSelected(r, f)"
+                         IsTarget="IsTarget(r, f)"
                          RankLabel="@(col == 0 ? (8 - r).ToString() : null)"
                          FileLabel="@(row == 7 ? ((char)('a' + f)).ToString() : null)"
                          OnClick="() => SelectSquare(r, f)" />
@@ -18,25 +19,49 @@
 </div>
 
 @code {
-    private (int Rank, int File)? _selected;
+    private Square? _selected;
+    private IReadOnlyList<Square> _targets = Array.Empty<Square>();
 
     [Parameter, EditorRequired]
-    public Board Position { get; set; } = default!;
+    public Game Game { get; set; } = default!;
 
     [Parameter]
     public bool Flipped { get; set; }
 
+    [Parameter]
+    public EventCallback OnMoved { get; set; }
+
     private bool IsSelected(int rank, int file) =>
         _selected is { } s && s.Rank == rank && s.File == file;
 
-    private void SelectSquare(int rank, int file)
+    private bool IsTarget(int rank, int file) =>
+        _targets.Contains(new Square(rank, file));
+
+    private async Task SelectSquare(int rank, int file)
     {
-        if (IsSelected(rank, file))
+        var clicked = new Square(rank, file);
+
+        if (_selected is { } from && _targets.Contains(clicked))
         {
-            _selected = null;
+            Game.TryMove(from, clicked);
+            Deselect();
+            await OnMoved.InvokeAsync();
             return;
         }
 
-        _selected = Position[rank, file] is null ? null : (rank, file);
+        if (_selected == clicked || !Game.IsOwnPiece(clicked))
+        {
+            Deselect();
+            return;
+        }
+
+        _selected = clicked;
+        _targets = Game.GetMoves(clicked);
+    }
+
+    private void Deselect()
+    {
+        _selected = null;
+        _targets = Array.Empty<Square>();
     }
 }
