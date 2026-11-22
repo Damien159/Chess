@@ -14,6 +14,8 @@ public class Game
     private int _halfmoveClock;
 
     private readonly Dictionary<string, int> _positionCounts = new();
+    private readonly List<MoveRecord> _moves = new();
+    private PieceColor? _resignedBy;
 
     public Game()
     {
@@ -26,10 +28,29 @@ public class Game
 
     public GameStatus Status { get; private set; } = GameStatus.Ongoing;
 
+    public IReadOnlyList<MoveRecord> Moves => _moves;
+
+    // Wer hat aktuell Remis angeboten? (null = kein Angebot)
+    public PieceColor? DrawOfferedBy { get; private set; }
+
     public bool IsOver => Status is not (GameStatus.Ongoing or GameStatus.Check);
 
-    public PieceColor? Winner =>
-        Status == GameStatus.Checkmate ? Opponent(CurrentTurn) : null;
+    public PieceColor? Winner => Status switch
+    {
+        GameStatus.Checkmate => Opponent(CurrentTurn),
+        GameStatus.Resigned when _resignedBy is { } loser => Opponent(loser),
+        _ => null
+    };
+
+    // Ergebnis im PGN-Format: 1-0, 0-1 oder 1/2-1/2 (null = Partie läuft noch)
+    public string? Result => !IsOver
+        ? null
+        : Winner switch
+        {
+            PieceColor.White => "1-0",
+            PieceColor.Black => "0-1",
+            _ => "1/2-1/2"
+        };
 
     public bool IsOwnPiece(Square square) =>
         Board[square] is { } piece && piece.Color == CurrentTurn;
@@ -47,6 +68,14 @@ public class Game
     public bool IsPromotion(Square from, Square to) =>
         Board[from] is { Type: PieceType.Pawn } && (to.Rank == 0 || to.Rank == 7);
 
+    // Geschlagene Figuren der angegebenen Farbe, wertvollste zuerst
+    public IReadOnlyList<Piece> GetCaptured(PieceColor capturedColor) =>
+        _moves
+            .Where(m => m.Captured is { } c && c.Color == capturedColor)
+            .Select(m => m.Captured!)
+            .OrderByDescending(p => Value(p.Type))
+            .ToList();
+
     public bool TryMove(Square from, Square to, PieceType? promotion = null)
     {
         if (!GetMoves(from).Contains(to))
@@ -55,10 +84,16 @@ public class Game
         }
 
         var piece = Board[from]!;
-        var isCapture = Board[to] is not null
-            || (piece.Type == PieceType.Pawn && from.File != to.File);
+        var mover = CurrentTurn;
+        var captured = GetCapturedPiece(from, to);
+        var isCapture = captured is not null;
 
-        ApplyMove(Board, from, to, promotion);
+        PieceType? promoteTo = IsPromotion(from, to) ? NormalizePromotion(promotion) : null;
+
+        // Notation muss VOR dem Zug berechnet werden (Mehrdeutigkeit prüfen)
+        var notation = BuildNotation(from, to, piece, isCapture, promoteTo);
+
+        ApplyMove(Board, from, to, promoteTo);
         UpdateCastlingRights(from, to);
 
         _enPassantTarget = piece.Type == PieceType.Pawn && Math.Abs(to.Rank - from.Rank) == 2
@@ -69,8 +104,188 @@ public class Game
 
         CurrentTurn = Opponent(CurrentTurn);
         UpdateStatus();
+
+        var suffix = Status == GameStatus.Checkmate
+            ? "#"
+            : IsKingAttacked(Board, CurrentTurn) ? "+" : "";
+
+        _moves.Add(new MoveRecord(from, to, promoteTo, notation + suffix, piece, captured));
+
+        // Ein Remisangebot verfällt, wenn der Gegner des Anbietenden zieht
+        if (IsOver || (DrawOfferedBy is { } offerer && offerer != mover))
+        {
+            DrawOfferedBy = null;
+        }
+
         return true;
     }
+
+    public bool Resign(PieceColor color)
+    {
+        if (IsOver)
+        {
+            return false;
+        }
+
+        _resignedBy = color;
+        Status = GameStatus.Resigned;
+        DrawOfferedBy = null;
+        return true;
+    }
+
+    public bool OfferDraw(PieceColor by)
+    {
+        if (IsOver || DrawOfferedBy is not null)
+        {
+            return false;
+        }
+
+        DrawOfferedBy = by;
+        return true;
+    }
+
+    public bool AcceptDraw()
+    {
+        if (IsOver || DrawOfferedBy is null)
+        {
+            return false;
+        }
+
+        DrawOfferedBy = null;
+        Status = GameStatus.DrawByAgreement;
+        return true;
+    }
+
+    public void DeclineDraw() => DrawOfferedBy = null;
+
+    // ---------- Notation ----------
+
+    private Piece? GetCapturedPiece(Square from, Square to)
+    {
+        if (Board[to] is { } target)
+        {
+            return target;
+        }
+
+        // En passant: Bauer geht diagonal auf ein leeres Feld
+        if (Board[from] is { Type: PieceType.Pawn } && from.File != to.File)
+        {
+            return Board[from.Rank, to.File];
+        }
+
+        return null;
+    }
+
+    private static PieceType NormalizePromotion(PieceType? type) =>
+        type is PieceType.Queen or PieceType.Rook or PieceType.Bishop or PieceType.Knight
+            ? type.Value
+            : PieceType.Queen;
+
+    private string BuildNotation(Square from, Square to, Piece piece, bool isCapture, PieceType? promotion)
+    {
+        // Rochade
+        if (piece.Type == PieceType.King && Math.Abs(to.File - from.File) == 2)
+        {
+            return to.File == 6 ? "O-O" : "O-O-O";
+        }
+
+        var sb = new StringBuilder();
+
+        if (piece.Type == PieceType.Pawn)
+        {
+            if (isCapture)
+            {
+                sb.Append(FileName(from.File));
+            }
+        }
+        else
+        {
+            sb.Append(PieceLetter(piece.Type));
+            sb.Append(Disambiguation(from, to, piece));
+        }
+
+        if (isCapture)
+        {
+            sb.Append('x');
+        }
+
+        sb.Append(SquareName(to));
+
+        if (promotion is { } promoted)
+        {
+            sb.Append('=').Append(PieceLetter(promoted));
+        }
+
+        return sb.ToString();
+    }
+
+    // Wenn zwei gleiche Figuren dasselbe Feld erreichen können: Datei, Reihe oder beides angeben
+    private string Disambiguation(Square from, Square to, Piece piece)
+    {
+        var others = new List<Square>();
+
+        for (var rank = 0; rank < 8; rank++)
+        {
+            for (var file = 0; file < 8; file++)
+            {
+                var square = new Square(rank, file);
+                if (square == from)
+                {
+                    continue;
+                }
+
+                if (Board[square] is { } other
+                    && other.Type == piece.Type
+                    && other.Color == piece.Color
+                    && GetLegalMoves(square).Contains(to))
+                {
+                    others.Add(square);
+                }
+            }
+        }
+
+        if (others.Count == 0)
+        {
+            return "";
+        }
+
+        if (others.All(o => o.File != from.File))
+        {
+            return FileName(from.File);
+        }
+
+        if (others.All(o => o.Rank != from.Rank))
+        {
+            return (8 - from.Rank).ToString();
+        }
+
+        return FileName(from.File) + (8 - from.Rank);
+    }
+
+    private static string FileName(int file) => ((char)('a' + file)).ToString();
+
+    private static string SquareName(Square square) => FileName(square.File) + (8 - square.Rank);
+
+    private static char PieceLetter(PieceType type) => type switch
+    {
+        PieceType.King => 'K',
+        PieceType.Queen => 'Q',
+        PieceType.Rook => 'R',
+        PieceType.Bishop => 'B',
+        PieceType.Knight => 'N',
+        _ => 'P'
+    };
+
+    private static int Value(PieceType type) => type switch
+    {
+        PieceType.Queen => 9,
+        PieceType.Rook => 5,
+        PieceType.Bishop => 3,
+        PieceType.Knight => 3,
+        _ => 1
+    };
+
+    // ---------- Zugausführung und Regeln ----------
 
     // Führt einen Zug aus, inklusive en passant, Rochade und Umwandlung.
     // Wird für echte Züge und für die Schach-Prüfung auf der Kopie benutzt.
