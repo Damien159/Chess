@@ -37,6 +37,9 @@
         GameStatus.Check => $"Schach! {TurnName} ist am Zug",
         GameStatus.Checkmate => $"Schachmatt! {(_game.Winner == PieceColor.White ? "Weiß" : "Schwarz")} gewinnt",
         GameStatus.Stalemate => "Patt – Unentschieden",
+        GameStatus.DrawByRepetition => "Remis durch dreifache Stellungswiederholung",
+        GameStatus.DrawByFiftyMoveRule => "Remis durch die 50-Züge-Regel",
+        GameStatus.DrawByInsufficientMaterial => "Remis – zu wenig Material für ein Matt",
         _ => $"Am Zug: {TurnName}"
     };
 
@@ -44,7 +47,7 @@
     {
         GameStatus.Check => "text-red-400",
         GameStatus.Checkmate => "text-emerald-400",
-        GameStatus.Stalemate => "text-yellow-400",
-        _ => "text-slate-300"
+        GameStatus.Ongoing => "text-slate-300",
+        _ => "text-yellow-400"
     };
 }
