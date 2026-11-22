@@ -8,9 +8,7 @@
 <div class="flex flex-col items-center gap-6">
     <h1 class="text-2xl font-bold">Spielen</h1>
 
-    <p class="text-slate-300">
-        Am Zug: <span class="font-semibold text-white">@(_game.CurrentTurn == PieceColor.White ? "Weiß" : "Schwarz")</span>
-    </p>
+    <p class="@StatusClass text-lg font-semibold">@StatusText</p>
 
     <ChessBoard @key="_game" Game="_game" Flipped="_flipped" OnMoved="StateHasChanged" />
 
@@ -31,4 +29,22 @@
     private bool _flipped;
 
     private void NewGame() => _game = new Game();
+
+    private string TurnName => _game.CurrentTurn == PieceColor.White ? "Weiß" : "Schwarz";
+
+    private string StatusText => _game.Status switch
+    {
+        GameStatus.Check => $"Schach! {TurnName} ist am Zug",
+        GameStatus.Checkmate => $"Schachmatt! {(_game.Winner == PieceColor.White ? "Weiß" : "Schwarz")} gewinnt",
+        GameStatus.Stalemate => "Patt – Unentschieden",
+        _ => $"Am Zug: {TurnName}"
+    };
+
+    private string StatusClass => _game.Status switch
+    {
+        GameStatus.Check => "text-red-400",
+        GameStatus.Checkmate => "text-emerald-400",
+        GameStatus.Stalemate => "text-yellow-400",
+        _ => "text-slate-300"
+    };
 }
