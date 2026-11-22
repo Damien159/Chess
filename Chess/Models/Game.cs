@@ -1,4 +1,6 @@
-﻿namespace Chess.Models;
+﻿using System.Text;
+
+namespace Chess.Models;
 
 public class Game
 {
@@ -8,13 +10,23 @@ public class Game
     private bool _blackKingSide = true;
     private bool _blackQueenSide = true;
 
+    // Halbzüge seit dem letzten Bauernzug oder Schlagzug
+    private int _halfmoveClock;
+
+    private readonly Dictionary<string, int> _positionCounts = new();
+
+    public Game()
+    {
+        _positionCounts[PositionKey()] = 1;
+    }
+
     public Board Board { get; } = Board.CreateStartPosition();
 
     public PieceColor CurrentTurn { get; private set; } = PieceColor.White;
 
     public GameStatus Status { get; private set; } = GameStatus.Ongoing;
 
-    public bool IsOver => Status is GameStatus.Checkmate or GameStatus.Stalemate;
+    public bool IsOver => Status is not (GameStatus.Ongoing or GameStatus.Check);
 
     public PieceColor? Winner =>
         Status == GameStatus.Checkmate ? Opponent(CurrentTurn) : null;
@@ -43,6 +55,8 @@ public class Game
         }
 
         var piece = Board[from]!;
+        var isCapture = Board[to] is not null
+            || (piece.Type == PieceType.Pawn && from.File != to.File);
 
         ApplyMove(Board, from, to, promotion);
         UpdateCastlingRights(from, to);
@@ -50,6 +64,8 @@ public class Game
         _enPassantTarget = piece.Type == PieceType.Pawn && Math.Abs(to.Rank - from.Rank) == 2
             ? new Square((from.Rank + to.Rank) / 2, from.File)
             : null;
+
+        _halfmoveClock = piece.Type == PieceType.Pawn || isCapture ? 0 : _halfmoveClock + 1;
 
         CurrentTurn = Opponent(CurrentTurn);
         UpdateStatus();
@@ -209,16 +225,144 @@ public class Game
 
     private void UpdateStatus()
     {
+        var repetitions = RecordPosition();
         var inCheck = IsKingAttacked(Board, CurrentTurn);
         var hasMoves = HasAnyLegalMove();
 
-        Status = (inCheck, hasMoves) switch
+        // Matt und Patt haben Vorrang vor allen Remisregeln
+        if (!hasMoves)
         {
-            (true, false) => GameStatus.Checkmate,
-            (false, false) => GameStatus.Stalemate,
-            (true, true) => GameStatus.Check,
-            _ => GameStatus.Ongoing
-        };
+            Status = inCheck ? GameStatus.Checkmate : GameStatus.Stalemate;
+            return;
+        }
+
+        if (HasInsufficientMaterial())
+        {
+            Status = GameStatus.DrawByInsufficientMaterial;
+        }
+        else if (repetitions >= 3)
+        {
+            Status = GameStatus.DrawByRepetition;
+        }
+        else if (_halfmoveClock >= 100)
+        {
+            Status = GameStatus.DrawByFiftyMoveRule;
+        }
+        else
+        {
+            Status = inCheck ? GameStatus.Check : GameStatus.Ongoing;
+        }
+    }
+
+    // Zählt, wie oft die aktuelle Stellung vorkam (inklusive jetzt)
+    private int RecordPosition()
+    {
+        var key = PositionKey();
+        _positionCounts[key] = _positionCounts.GetValueOrDefault(key) + 1;
+        return _positionCounts[key];
+    }
+
+    // Gleiche Stellung = gleiche Figuren, gleicher Spieler am Zug,
+    // gleiche Rochaderechte, gleiche en-passant-Möglichkeit
+    private string PositionKey()
+    {
+        var sb = new StringBuilder();
+
+        for (var rank = 0; rank < 8; rank++)
+        {
+            for (var file = 0; file < 8; file++)
+            {
+                if (Board[rank, file] is { } piece)
+                {
+                    var letter = piece.Type switch
+                    {
+                        PieceType.Pawn => 'p',
+                        PieceType.Knight => 'n',
+                        PieceType.Bishop => 'b',
+                        PieceType.Rook => 'r',
+                        PieceType.Queen => 'q',
+                        _ => 'k'
+                    };
+                    sb.Append(piece.Color == PieceColor.White ? char.ToUpper(letter) : letter);
+                }
+                else
+                {
+                    sb.Append('.');
+                }
+            }
+        }
+
+        sb.Append(CurrentTurn == PieceColor.White ? " w " : " b ");
+        sb.Append(_whiteKingSide ? 'K' : '-');
+        sb.Append(_whiteQueenSide ? 'Q' : '-');
+        sb.Append(_blackKingSide ? 'k' : '-');
+        sb.Append(_blackQueenSide ? 'q' : '-');
+
+        if (IsEnPassantPossible() && _enPassantTarget is { } target)
+        {
+            sb.Append(' ').Append(target.Rank).Append(target.File);
+        }
+
+        return sb.ToString();
+    }
+
+    // En passant zählt nur, wenn ein Bauer den Zug wirklich legal ausführen kann
+    private bool IsEnPassantPossible()
+    {
+        if (_enPassantTarget is not { } target)
+        {
+            return false;
+        }
+
+        var direction = CurrentTurn == PieceColor.White ? -1 : 1;
+        var pawnRank = target.Rank - direction;
+
+        foreach (var fileOffset in new[] { -1, 1 })
+        {
+            var file = target.File + fileOffset;
+            if (Board.IsInside(pawnRank, file)
+                && Board[pawnRank, file] is { Type: PieceType.Pawn } pawn
+                && pawn.Color == CurrentTurn
+                && GetLegalMoves(new Square(pawnRank, file)).Contains(target))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Remis bei: König gegen König, König+Läufer oder König+Springer gegen König,
+    // sowie nur Läufer auf gleichfarbigen Feldern
+    private bool HasInsufficientMaterial()
+    {
+        var minorPieces = new List<(PieceType Type, int SquareColor)>();
+
+        for (var rank = 0; rank < 8; rank++)
+        {
+            for (var file = 0; file < 8; file++)
+            {
+                if (Board[rank, file] is not { } piece || piece.Type == PieceType.King)
+                {
+                    continue;
+                }
+
+                if (piece.Type is PieceType.Pawn or PieceType.Rook or PieceType.Queen)
+                {
+                    return false;
+                }
+
+                minorPieces.Add((piece.Type, (rank + file) % 2));
+            }
+        }
+
+        if (minorPieces.Count <= 1)
+        {
+            return true;
+        }
+
+        return minorPieces.All(p => p.Type == PieceType.Bishop)
+            && minorPieces.All(p => p.SquareColor == minorPieces[0].SquareColor);
     }
 
     private static PieceColor Opponent(PieceColor color) =>
