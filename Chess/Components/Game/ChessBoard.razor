@@ -60,6 +60,15 @@
     [Parameter]
     public EventCallback OnMoved { get; set; }
 
+    protected override void OnParametersSet()
+    {
+        if (Game.IsOver)
+        {
+            _pendingPromotion = null;
+            Deselect();
+        }
+    }
+
     private bool IsSelected(int rank, int file) =>
         _selected is { } s && s.Rank == rank && s.File == file;
 
