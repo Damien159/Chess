@@ -1,4 +1,4 @@
-using Chess.Components;
+﻿using Chess.Components;
 using Chess.Components.Account;
 using Chess.Data;
 using Microsoft.AspNetCore.Components.Authorization;
@@ -12,6 +12,7 @@ namespace Chess
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddScoped<Chess.Data.GameRepository>();
 
             // Add services to the container.
             builder.Services.AddRazorComponents()
@@ -74,3 +75,4 @@ namespace Chess
         }
     }
 }
+
