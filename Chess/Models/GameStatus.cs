@@ -5,5 +5,8 @@ public enum GameStatus
     Ongoing,
     Check,
     Checkmate,
-    Stalemate
+    Stalemate,
+    DrawByRepetition,
+    DrawByFiftyMoveRule,
+    DrawByInsufficientMaterial
 }
