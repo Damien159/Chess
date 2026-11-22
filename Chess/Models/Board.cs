@@ -18,6 +18,9 @@ public class Board
     public static bool IsInside(int rank, int file) =>
         rank is >= 0 and < 8 && file is >= 0 and < 8;
 
+    public void Set(Square square, Piece? piece) =>
+        _squares[square.Rank, square.File] = piece;
+
     public void Move(Square from, Square to)
     {
         _squares[to.Rank, to.File] = _squares[from.Rank, from.File];
