@@ -24,6 +24,29 @@ public class Board
         _squares[from.Rank, from.File] = null;
     }
 
+    public Board Clone()
+    {
+        var copy = new Board();
+        Array.Copy(_squares, copy._squares, _squares.Length);
+        return copy;
+    }
+
+    public Square? FindKing(PieceColor color)
+    {
+        for (var rank = 0; rank < 8; rank++)
+        {
+            for (var file = 0; file < 8; file++)
+            {
+                if (_squares[rank, file] is { Type: PieceType.King } king && king.Color == color)
+                {
+                    return new Square(rank, file);
+                }
+            }
+        }
+
+        return null;
+    }
+
     public static Board CreateStartPosition()
     {
         var board = new Board();
