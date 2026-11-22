@@ -1,14 +1,38 @@
 ﻿@page "/play"
 @rendermode InteractiveServer
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
 @using Chess.Components.Game
+@using Chess.Data
 @using Chess.Models
+@inject AuthenticationStateProvider AuthStateProvider
+@inject GameRepository Repository
+@inject ILogger<Play> Logger
 
 <PageTitle>Spielen</PageTitle>
 
 <div class="flex flex-col items-center gap-6">
     <h1 class="text-2xl font-bold">Spielen</h1>
 
-    <p class="@StatusClass text-lg font-semibold">@StatusText</p>
+    <div class="text-center">
+        <p class="@StatusClass text-lg font-semibold">@StatusText</p>
+
+        @if (_saveFailed)
+        {
+            <p class="mt-1 text-sm text-red-400">Die Partie konnte nicht gespeichert werden.</p>
+        }
+        else if (_userId is null)
+        {
+            <p class="mt-1 text-sm text-slate-500">
+                <a href="Account/Login" class="text-emerald-400 hover:underline">Melde dich an</a>,
+                damit deine Partien gespeichert werden.
+            </p>
+        }
+        else if (_storedId is not null)
+        {
+            <p class="mt-1 text-sm text-slate-500">Partie wird gespeichert.</p>
+        }
+    </div>
 
     <div class="flex w-full flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
         <div class="w-full max-w-[560px] shrink-0 lg:w-[560px]">
@@ -89,25 +113,64 @@
     private Game _game = new();
     private bool _flipped;
     private bool _confirmResign;
+    private string? _userId;
+    private int? _storedId;
+    private bool _saveFailed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = state.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    }
 
     private void NewGame()
     {
         _game = new Game();
+        _storedId = null;
+        _saveFailed = false;
         _confirmResign = false;
     }
 
-    private void HandleMoved() => _confirmResign = false;
+    private async Task HandleMoved()
+    {
+        _confirmResign = false;
+        await SaveAsync();
+    }
 
     private void OfferDraw() => _game.OfferDraw(_game.CurrentTurn);
 
-    private void AcceptDraw() => _game.AcceptDraw();
+    private async Task AcceptDraw()
+    {
+        _game.AcceptDraw();
+        await SaveAsync();
+    }
 
     private void DeclineDraw() => _game.DeclineDraw();
 
-    private void Resign()
+    private async Task Resign()
     {
         _game.Resign(_game.CurrentTurn);
         _confirmResign = false;
+        await SaveAsync();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (_userId is null || _game.Moves.Count == 0)
+        {
+            return;
+        }
+
+        try
+        {
+            _storedId = await Repository.SaveAsync(_storedId, _userId, _game);
+            _saveFailed = false;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Saving the game failed");
+            _saveFailed = true;
+        }
     }
 
     private static string ColorName(PieceColor color) => color == PieceColor.White ? "Weiß" : "Schwarz";
