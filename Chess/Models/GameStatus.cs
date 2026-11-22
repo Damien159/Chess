@@ -8,5 +8,7 @@ public enum GameStatus
     Stalemate,
     DrawByRepetition,
     DrawByFiftyMoveRule,
-    DrawByInsufficientMaterial
+    DrawByInsufficientMaterial,
+    DrawByAgreement,
+    Resigned
 }
