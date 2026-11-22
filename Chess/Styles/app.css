@@ -5,3 +5,34 @@
     --color-board-light: #eeeed2;
     --color-board-dark: #769656;
 }
+
+@layer base {
+    h1 { @apply mb-4 text-2xl font-bold; }
+    h2 { @apply mb-3 text-xl font-semibold; }
+    h3 { @apply mb-3 text-lg font-semibold; }
+    hr { @apply my-4 border-slate-700; }
+    main a:not([class]) { @apply text-emerald-400 hover:underline; }
+}
+
+@layer components {
+    .row { @apply flex flex-wrap justify-center gap-10; }
+    .col-md-4, .col-md-6, .col-lg-4, .col-lg-6 { @apply w-full max-w-md; }
+
+    .form-floating { @apply mb-4 flex flex-col; }
+    .form-floating > label { @apply order-first mb-1 text-sm text-slate-400; }
+    .form-control { @apply w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-emerald-500; }
+
+    .btn { @apply cursor-pointer rounded-xl px-4 py-2 font-medium text-white; }
+    .btn-lg { @apply px-6 py-3; }
+    .btn-primary { @apply bg-emerald-600 hover:bg-emerald-500; }
+    .btn-danger { @apply bg-red-600 hover:bg-red-500; }
+    .btn-link { @apply bg-transparent text-emerald-400 hover:underline; }
+    .w-100 { @apply w-full; }
+
+    .text-danger, .validation-message { @apply text-sm text-red-400; }
+
+    .alert { @apply mb-4 rounded-lg border px-4 py-3 text-sm; }
+    .alert-danger { @apply border-red-500/50 bg-red-500/10 text-red-300; }
+    .alert-success { @apply border-emerald-500/50 bg-emerald-500/10 text-emerald-300; }
+    .alert-warning { @apply border-yellow-500/50 bg-yellow-500/10 text-yellow-300; }
+}
