@@ -1,0 +1,85 @@
+﻿@page "/games"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using Chess.Data
+@inject AuthenticationStateProvider AuthStateProvider
+@inject GameRepository Repository
+
+<PageTitle>Meine Partien</PageTitle>
+
+<div class="mx-auto max-w-3xl">
+    <h1 class="text-2xl font-bold">Meine Partien</h1>
+
+    @if (_userId is null)
+    {
+        <p class="text-slate-400">
+            Bitte <a href="Account/Login" class="text-emerald-400 hover:underline">melde dich an</a>,
+            um deine Partien zu sehen.
+        </p>
+    }
+    else if (_games.Count == 0)
+    {
+        <p class="text-slate-400">
+            Du hast noch keine gespeicherte Partie.
+            <a href="play" class="text-emerald-400 hover:underline">Spiele jetzt eine.</a>
+        </p>
+    }
+    else
+    {
+        <div class="overflow-hidden rounded-xl border border-slate-800 bg-slate-900">
+            <table class="w-full text-sm">
+                <thead class="bg-slate-800 text-left text-slate-300">
+                    <tr>
+                        <th class="px-4 py-2">Datum</th>
+                        <th class="px-4 py-2">Züge</th>
+                        <th class="px-4 py-2">Ergebnis</th>
+                        <th class="px-4 py-2">Ausgang</th>
+                        <th class="px-4 py-2"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var game in _games)
+                    {
+                        <tr class="border-t border-slate-800">
+                            <td class="px-4 py-2">@game.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</td>
+                            <td class="px-4 py-2">@((game.MoveCount + 1) / 2)</td>
+                            <td class="px-4 py-2 font-mono">@(game.Result ?? "–")</td>
+                            <td class="px-4 py-2">@StatusText(game.Status)</td>
+                            <td class="px-4 py-2 text-right">
+                                <a href="games/@game.Id" class="text-emerald-400 hover:underline">Ansehen</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+@code {
+    private string? _userId;
+    private List<GameSummary> _games = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        _userId = state.User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (_userId is not null)
+        {
+            _games = await Repository.GetUserGamesAsync(_userId);
+        }
+    }
+
+    private static string StatusText(string status) => status switch
+    {
+        "Checkmate" => "Schachmatt",
+        "Resigned" => "Aufgabe",
+        "Stalemate" => "Patt",
+        "DrawByRepetition" => "Stellungswiederholung",
+        "DrawByFiftyMoveRule" => "50-Züge-Regel",
+        "DrawByInsufficientMaterial" => "Zu wenig Material",
+        "DrawByAgreement" => "Remis vereinbart",
+        _ => "Unvollendet"
+    };
+}
