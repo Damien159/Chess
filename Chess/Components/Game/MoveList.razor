@@ -1,0 +1,41 @@
+﻿@using Chess.Models
+
+<div class="rounded-xl border border-slate-800 bg-slate-900 p-3">
+    <h2 class="mb-2 text-sm font-semibold text-slate-300">Züge</h2>
+
+    @if (Moves.Count == 0)
+    {
+        <p class="text-sm text-slate-500">Noch keine Züge.</p>
+    }
+    else
+    {
+        <div class="max-h-72 overflow-y-auto">
+            <table class="w-full text-sm">
+                <tbody>
+                    @for (var i = 0; i < Moves.Count; i += 2)
+                    {
+                        var index = i;
+                        <tr class="@(index / 2 % 2 == 1 ? "bg-slate-800/40" : "")">
+                            <td class="w-10 py-1 pl-2 text-slate-500">@(index / 2 + 1).</td>
+                            <td class="py-1 font-mono">@(Moves[index].Notation)</td>
+                            <td class="py-1 font-mono">@(index + 1 < Moves.Count ? Moves[index + 1].Notation : "")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        if (Result is not null)
+        {
+            <p class="mt-2 text-right text-sm font-semibold text-slate-300">@Result</p>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<MoveRecord> Moves { get; set; } = default!;
+
+    [Parameter]
+    public string? Result { get; set; }
+}
