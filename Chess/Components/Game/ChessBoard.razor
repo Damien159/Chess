@@ -11,6 +11,7 @@
                          IsLight="(r + f) % 2 == 0"
                          IsSelected="IsSelected(r, f)"
                          IsTarget="IsTarget(r, f)"
+                         IsCheck="IsKingInCheck(r, f)"
                          RankLabel="@(col == 0 ? (8 - r).ToString() : null)"
                          FileLabel="@(row == 7 ? ((char)('a' + f)).ToString() : null)"
                          OnClick="() => SelectSquare(r, f)" />
@@ -36,6 +37,11 @@
 
     private bool IsTarget(int rank, int file) =>
         _targets.Contains(new Square(rank, file));
+
+    private bool IsKingInCheck(int rank, int file) =>
+        Game.Status is GameStatus.Check or GameStatus.Checkmate
+        && Game.Board[rank, file] is { Type: PieceType.King } king
+        && king.Color == Game.CurrentTurn;
 
     private async Task SelectSquare(int rank, int file)
     {
