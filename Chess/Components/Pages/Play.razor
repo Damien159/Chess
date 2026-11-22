@@ -10,43 +10,127 @@
 
     <p class="@StatusClass text-lg font-semibold">@StatusText</p>
 
-    <ChessBoard @key="_game" Game="_game" Flipped="_flipped" OnMoved="StateHasChanged" />
+    <div class="flex w-full flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
+        <div class="w-full max-w-[560px] shrink-0 lg:w-[560px]">
+            <ChessBoard @key="_game" Game="_game" Flipped="_flipped" OnMoved="HandleMoved" />
+        </div>
 
-    <div class="flex gap-3">
-        <button @onclick="() => _flipped = !_flipped"
-                class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
-            Brett drehen
-        </button>
-        <button @onclick="NewGame"
-                class="rounded-xl bg-emerald-600 px-4 py-2 text-sm hover:bg-emerald-500">
-            Neue Partie
-        </button>
+        <aside class="flex w-full max-w-[560px] flex-col gap-4 lg:w-80">
+            <CapturedPieces Label="Weiß hat geschlagen" Pieces="_game.GetCaptured(PieceColor.Black)" />
+            <CapturedPieces Label="Schwarz hat geschlagen" Pieces="_game.GetCaptured(PieceColor.White)" />
+
+            <MoveList Moves="_game.Moves" Result="_game.Result" />
+
+            @if (!_game.IsOver && _game.DrawOfferedBy is { } offerer)
+            {
+                <div class="rounded-xl border border-yellow-500/50 bg-slate-900 p-3 text-sm">
+                    <p class="mb-2 text-yellow-300">@ColorName(offerer) bietet Remis an.</p>
+                    <div class="flex gap-2">
+                        <button @onclick="AcceptDraw"
+                                class="rounded-lg bg-emerald-600 px-3 py-1.5 hover:bg-emerald-500">
+                            Annehmen
+                        </button>
+                        <button @onclick="DeclineDraw"
+                                class="rounded-lg bg-slate-700 px-3 py-1.5 hover:bg-slate-600">
+                            Ablehnen
+                        </button>
+                    </div>
+                </div>
+            }
+
+            <div class="flex flex-wrap gap-2">
+                <button @onclick="() => _flipped = !_flipped"
+                        class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
+                    Brett drehen
+                </button>
+                <button @onclick="NewGame"
+                        class="rounded-xl bg-emerald-600 px-4 py-2 text-sm hover:bg-emerald-500">
+                    Neue Partie
+                </button>
+            </div>
+
+            @if (!_game.IsOver)
+            {
+                <div class="flex flex-wrap items-center gap-2">
+                    @if (_game.DrawOfferedBy is null)
+                    {
+                        <button @onclick="OfferDraw"
+                                class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
+                            Remis anbieten
+                        </button>
+                    }
+
+                    @if (_confirmResign)
+                    {
+                        <span class="text-sm text-slate-300">@TurnName wirklich aufgeben?</span>
+                        <button @onclick="Resign"
+                                class="rounded-xl bg-red-600 px-4 py-2 text-sm hover:bg-red-500">
+                            Ja
+                        </button>
+                        <button @onclick="() => _confirmResign = false"
+                                class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
+                            Abbrechen
+                        </button>
+                    }
+                    else
+                    {
+                        <button @onclick="() => _confirmResign = true"
+                                class="rounded-xl bg-slate-800 px-4 py-2 text-sm text-red-300 hover:bg-slate-700">
+                            @TurnName gibt auf
+                        </button>
+                    }
+                </div>
+            }
+        </aside>
     </div>
 </div>
 
 @code {
     private Game _game = new();
     private bool _flipped;
+    private bool _confirmResign;
 
-    private void NewGame() => _game = new Game();
+    private void NewGame()
+    {
+        _game = new Game();
+        _confirmResign = false;
+    }
 
-    private string TurnName => _game.CurrentTurn == PieceColor.White ? "Weiß" : "Schwarz";
+    private void HandleMoved() => _confirmResign = false;
+
+    private void OfferDraw() => _game.OfferDraw(_game.CurrentTurn);
+
+    private void AcceptDraw() => _game.AcceptDraw();
+
+    private void DeclineDraw() => _game.DeclineDraw();
+
+    private void Resign()
+    {
+        _game.Resign(_game.CurrentTurn);
+        _confirmResign = false;
+    }
+
+    private static string ColorName(PieceColor color) => color == PieceColor.White ? "Weiß" : "Schwarz";
+
+    private string TurnName => ColorName(_game.CurrentTurn);
 
     private string StatusText => _game.Status switch
     {
         GameStatus.Check => $"Schach! {TurnName} ist am Zug",
-        GameStatus.Checkmate => $"Schachmatt! {(_game.Winner == PieceColor.White ? "Weiß" : "Schwarz")} gewinnt",
+        GameStatus.Checkmate => $"Schachmatt! {ColorName(_game.Winner!.Value)} gewinnt",
+        GameStatus.Resigned => $"{ColorName(_game.Winner!.Value)} gewinnt durch Aufgabe",
         GameStatus.Stalemate => "Patt – Unentschieden",
         GameStatus.DrawByRepetition => "Remis durch dreifache Stellungswiederholung",
         GameStatus.DrawByFiftyMoveRule => "Remis durch die 50-Züge-Regel",
         GameStatus.DrawByInsufficientMaterial => "Remis – zu wenig Material für ein Matt",
+        GameStatus.DrawByAgreement => "Remis durch Einigung",
         _ => $"Am Zug: {TurnName}"
     };
 
     private string StatusClass => _game.Status switch
     {
         GameStatus.Check => "text-red-400",
-        GameStatus.Checkmate => "text-emerald-400",
+        GameStatus.Checkmate or GameStatus.Resigned => "text-emerald-400",
         GameStatus.Ongoing => "text-slate-300",
         _ => "text-yellow-400"
     };
