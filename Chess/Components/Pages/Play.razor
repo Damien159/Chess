@@ -110,13 +110,16 @@
 </div>
 
 @code {
+    // Der gesamte Spielzustand lebt im Speicher dieses Objekts. Gespeichert wird erst nach einem Zug (SaveAsync).
     private Game _game = new();
     private bool _flipped;
     private bool _confirmResign;
     private string? _userId;
+    // Datenbank-Id der Partie. Bleibt null bis zum ersten gespeicherten Zug.
     private int? _storedId;
     private bool _saveFailed;
 
+    // Liest die Id des angemeldeten Benutzers. Ohne Anmeldung wird nichts gespeichert, gespielt werden kann trotzdem.
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -154,6 +157,8 @@
         await SaveAsync();
     }
 
+    // Speichert nach jedem Zug. Ein Fehler beim Speichern darf das Spiel nicht abbrechen,
+    // deshalb try/catch und ein Hinweis in der Oberfläche.
     private async Task SaveAsync()
     {
         if (_userId is null || _game.Moves.Count == 0)

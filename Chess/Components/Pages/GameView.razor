@@ -28,6 +28,7 @@ else
         </p>
 
         <div class="flex w-full flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
+            @* pointer-events-none: Das Brett dient hier nur zum Ansehen, Klicks darauf haben keine Wirkung. *@
             <div class="pointer-events-none w-full max-w-[560px] shrink-0 lg:w-[560px]">
                 <ChessBoard Game="_view" Flipped="_flipped" />
             </div>
@@ -79,6 +80,7 @@ else
     private int _total;
     private bool _flipped;
 
+    // GetGameAsync filtert nach der Benutzer-Id. Fremde Partien lassen sich auch über die Adresse nicht abrufen.
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -102,6 +104,7 @@ else
         _ply = _total;
     }
 
+    // Es wird nicht rückwärts gerechnet. Stattdessen wird die Partie bis zum gewünschten Halbzug neu nachgespielt.
     private void GoTo(int ply)
     {
         _ply = Math.Clamp(ply, 0, _total);

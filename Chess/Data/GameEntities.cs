@@ -1,5 +1,6 @@
 ﻿namespace Chess.Data;
 
+// Tabelle Games: eine Partie eines Benutzers. Die Züge hängen über Moves daran.
 public class StoredGame
 {
     public int Id { get; set; }
@@ -19,6 +20,8 @@ public class StoredGame
     public List<StoredMove> Moves { get; set; } = new();
 }
 
+// Tabelle Moves: ein Halbzug. Es werden nur Züge gespeichert, keine Stellungen.
+// Die Stellung entsteht beim Ansehen durch Nachspielen mit derselben Schachlogik.
 public class StoredMove
 {
     public int Id { get; set; }

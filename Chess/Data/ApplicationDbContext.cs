@@ -10,6 +10,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
 
     public DbSet<StoredMove> Moves => Set<StoredMove>();
 
+    // Beziehungen: Wird ein Benutzer gelöscht, verschwinden seine Partien, wird eine Partie
+    // gelöscht, verschwinden ihre Züge (Cascade). Der eindeutige Index verhindert zwei Züge
+    // mit derselben Nummer in einer Partie.
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

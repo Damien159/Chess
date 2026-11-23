@@ -1,11 +1,14 @@
 ﻿@using Chess.Models
 
+@* Das Brett: 64 ChessSquare-Komponenten. Beim Drehen (Flipped) werden nur die Indizes gespiegelt, *@
+@* die Spiellogik bleibt gleich. *@
 <div class="relative w-full max-w-[560px]">
     <div class="grid w-full grid-cols-8 overflow-hidden rounded-xl shadow-2xl">
         @for (var row = 0; row < 8; row++)
         {
             for (var col = 0; col < 8; col++)
             {
+                // Beim Drehen werden Reihe und Linie gespiegelt. Gedreht wird die Darstellung, nicht die Daten.
                 var r = Flipped ? 7 - row : row;
                 var f = Flipped ? 7 - col : col;
                 <ChessSquare Piece="Game.Board[r, f]"
@@ -47,8 +50,10 @@
     private static readonly PieceType[] PromotionTypes =
         [PieceType.Queen, PieceType.Rook, PieceType.Bishop, PieceType.Knight];
 
+    // Aktuell gewählte Figur und deren legale Ziele (für die Markierungen).
     private Square? _selected;
     private IReadOnlyList<Square> _targets = Array.Empty<Square>();
+    // Gesetzt, solange der Umwandlungsdialog offen ist. Der Zug wird erst nach der Auswahl ausgeführt.
     private (Square From, Square To)? _pendingPromotion;
 
     [Parameter, EditorRequired]
@@ -60,6 +65,7 @@
     [Parameter]
     public EventCallback OnMoved { get; set; }
 
+    // Endet die Partie von außen (zum Beispiel durch Aufgeben), wird die Auswahl zurückgesetzt.
     protected override void OnParametersSet()
     {
         if (Game.IsOver)
@@ -75,11 +81,14 @@
     private bool IsTarget(int rank, int file) =>
         _targets.Contains(new Square(rank, file));
 
+    // Nur der König der Seite am Zug wird rot markiert.
     private bool IsKingInCheck(int rank, int file) =>
         Game.Status is GameStatus.Check or GameStatus.Checkmate
         && Game.Board[rank, file] is { Type: PieceType.King } king
         && king.Color == Game.CurrentTurn;
 
+    // Drei Fälle: 1) Ziel einer gewählten Figur angeklickt: ziehen (bei Umwandlung erst den Dialog zeigen).
+    // 2) Eigene Figur angeklickt: auswählen und Ziele berechnen. 3) Alles andere: Auswahl aufheben.
     private async Task SelectSquare(int rank, int file)
     {
         if (_pendingPromotion is not null)

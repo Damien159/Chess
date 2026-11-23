@@ -1,5 +1,8 @@
 ﻿namespace Chess.Models;
 
+// Beantwortet die Frage: Wird dieses Feld von dieser Farbe angegriffen?
+// Der Trick: Statt alle gegnerischen Züge zu berechnen, schaut man vom Feld aus rückwärts,
+// ob dort eine Figur steht, die es erreichen würde. Das wird für Schach und Rochade gebraucht.
 public static class AttackChecker
 {
     private static readonly (int Rank, int File)[] KnightSteps =
@@ -58,6 +61,8 @@ public static class AttackChecker
         && piece.Color == color
         && piece.Type == type;
 
+    // Läuft vom Zielfeld in jede Richtung bis zur ersten Figur. Ist es ein passender Angreifer
+    // (Läufer oder Turm, oder die Dame), wird das Feld angegriffen. Jede andere Figur blockiert den Weg.
     private static bool IsAttackedBySlider(
         Board board, Square target, PieceColor by,
         (int Rank, int File)[] directions, PieceType sliderType)

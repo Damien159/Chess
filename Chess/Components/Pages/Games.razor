@@ -60,6 +60,7 @@
     private string? _userId;
     private List<GameSummary> _games = new();
 
+    // Lädt nur die Partien des angemeldeten Benutzers.
     protected override async Task OnInitializedAsync()
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -71,6 +72,7 @@
         }
     }
 
+    // Übersetzt den in der Datenbank gespeicherten Status in deutschen Text.
     private static string StatusText(string status) => status switch
     {
         "Checkmate" => "Schachmatt",

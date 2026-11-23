@@ -5,6 +5,9 @@ namespace Chess.Data;
 
 public record GameSummary(int Id, DateTime CreatedAt, string? Result, string Status, int MoveCount);
 
+// Einzige Stelle, die Partien liest und schreibt. Für jeden Aufruf wird ein eigener Scope mit
+// eigenem DbContext erzeugt, weil Blazor-Komponenten lange leben und ein langlebiger
+// DbContext dort Probleme macht.
 public class GameRepository(IServiceScopeFactory scopeFactory)
 {
     // Legt die Partie an (storedId = null) oder hängt neue Züge an und aktualisiert den Status.
@@ -27,6 +30,7 @@ public class GameRepository(IServiceScopeFactory scopeFactory)
             db.Games.Add(stored);
         }
 
+        // Es werden nur die neuen Züge angehängt, nicht die ganze Partie neu geschrieben.
         for (var i = stored.Moves.Count; i < game.Moves.Count; i++)
         {
             var move = game.Moves[i];

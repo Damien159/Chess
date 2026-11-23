@@ -19,6 +19,9 @@ public static class MoveGenerator
 
     private static readonly (int Rank, int File)[] AllDirections = [.. Diagonals, .. Straights];
 
+    // Liefert alle Felder, die eine Figur nach ihrer Bewegungsart erreichen kann.
+    // Achtung: ohne Schach-Prüfung und ohne Sonderzüge (Rochade, en passant). Das ergänzt Game.
+    // Es gibt nur drei Grundmuster: Einzelschritte, Gleiten und der Bauer als Sonderfall.
     public static List<Square> GetMoves(Board board, Square from)
     {
         var moves = new List<Square>();
@@ -53,8 +56,10 @@ public static class MoveGenerator
         return moves;
     }
 
+    // Der Bauer ist der Sonderfall: Er zieht vorwärts, schlägt aber nur diagonal.
     private static void AddPawnMoves(Board board, Square from, PieceColor color, List<Square> moves)
     {
+        // Weiß zieht Richtung Zeile 0 (die 8. Reihe), Schwarz Richtung Zeile 7.
         var direction = color == PieceColor.White ? -1 : 1;
         var startRank = color == PieceColor.White ? 6 : 1;
         var oneStep = from.Rank + direction;
@@ -64,12 +69,14 @@ public static class MoveGenerator
             moves.Add(new Square(oneStep, from.File));
 
             var twoSteps = from.Rank + 2 * direction;
+            // Doppelschritt nur aus der Grundstellung und nur, wenn auch das zweite Feld frei ist.
             if (from.Rank == startRank && board[twoSteps, from.File] is null)
             {
                 moves.Add(new Square(twoSteps, from.File));
             }
         }
 
+        // Schlagen nur diagonal und nur, wenn dort eine gegnerische Figur steht.
         foreach (var fileOffset in new[] { -1, 1 })
         {
             var file = from.File + fileOffset;
@@ -82,6 +89,8 @@ public static class MoveGenerator
         }
     }
 
+    // Für Figuren mit festen Sprüngen (Springer, König): jedes Zielfeld, das auf dem Brett liegt
+    // und nicht von einer eigenen Figur besetzt ist.
     private static void AddStepMoves(
         Board board, Square from, PieceColor color,
         (int Rank, int File)[] steps, List<Square> moves)
@@ -98,6 +107,7 @@ public static class MoveGenerator
         }
     }
 
+    // Für Läufer, Turm und Dame: In jede Richtung gehen, bis das Brett endet oder eine Figur im Weg steht.
     private static void AddSlideMoves(
         Board board, Square from, PieceColor color,
         (int Rank, int File)[] directions, List<Square> moves)
@@ -117,6 +127,8 @@ public static class MoveGenerator
                 }
                 else
                 {
+                    // Gegnerische Figur: Das Feld ist schlagbar, danach ist der Weg blockiert.
+                    // Eigene Figur: Der Weg ist blockiert, das Feld nicht erreichbar.
                     if (target.Color != color)
                     {
                         moves.Add(new Square(rank, file));

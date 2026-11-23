@@ -15,18 +15,25 @@ public class Board
 
     public Piece? this[Square square] => _squares[square.Rank, square.File];
 
+    // Prüft die Brettgrenzen. Überall, wo gerechnet wird, schützt das vor Zugriffen außerhalb des Arrays.
     public static bool IsInside(int rank, int file) =>
         rank is >= 0 and < 8 && file is >= 0 and < 8;
 
+    // Setzt oder entfernt eine Figur direkt. Gebraucht für en passant (der geschlagene Bauer
+    // steht neben dem Zielfeld) und für die Umwandlung.
     public void Set(Square square, Piece? piece) =>
         _squares[square.Rank, square.File] = piece;
 
+    // Bewegt nur die Figur, ohne Regelprüfung (die steckt in Game).
+    // Steht auf dem Zielfeld eine Figur, wird sie überschrieben, also geschlagen.
     public void Move(Square from, Square to)
     {
         _squares[to.Rank, to.File] = _squares[from.Rank, from.File];
         _squares[from.Rank, from.File] = null;
     }
 
+    // Kopie des Bretts für die Selbstschach-Prüfung. Flaches Kopieren reicht,
+    // weil Piece unveränderlich ist.
     public Board Clone()
     {
         var copy = new Board();
@@ -34,6 +41,7 @@ public class Board
         return copy;
     }
 
+    // Sucht den König einer Farbe. Wird gebraucht, um zu prüfen, ob er angegriffen wird.
     public Square? FindKing(PieceColor color)
     {
         for (var rank = 0; rank < 8; rank++)
@@ -50,6 +58,7 @@ public class Board
         return null;
     }
 
+    // Baut die Grundstellung: Schwarz oben (Zeilen 0 und 1), Weiß unten (Zeilen 6 und 7).
     public static Board CreateStartPosition()
     {
         var board = new Board();

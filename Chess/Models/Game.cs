@@ -2,9 +2,16 @@
 
 namespace Chess.Models;
 
+// Der komplette Zustand einer Partie: Brett, wer am Zug ist, Status, Zugliste, Regelgedächtnis.
+// Die Oberfläche benutzt nur GetMoves, TryMove, Resign und die Remis-Methoden.
+// Diese Klasse kennt weder Blazor noch die Datenbank. Deshalb lässt sie sich einfach testen.
 public class Game
 {
+    // Das Feld, das beim letzten Doppelschritt eines Bauern übersprungen wurde.
+    // En passant gilt nur direkt im nächsten Zug, danach wird es wieder null.
     private Square? _enPassantTarget;
+    // Rochaderechte. Sie gehen verloren, sobald König oder der jeweilige Turm zieht
+    // oder der Turm geschlagen wird (siehe UpdateCastlingRights).
     private bool _whiteKingSide = true;
     private bool _whiteQueenSide = true;
     private bool _blackKingSide = true;
@@ -13,6 +20,7 @@ public class Game
     // Halbzüge seit dem letzten Bauernzug oder Schlagzug
     private int _halfmoveClock;
 
+    // Zählt, wie oft jede Stellung vorkam (für die dreifache Wiederholung). Schlüssel ist PositionKey().
     private readonly Dictionary<string, int> _positionCounts = new();
     private readonly List<MoveRecord> _moves = new();
     private PieceColor? _resignedBy;
@@ -55,6 +63,10 @@ public class Game
     public bool IsOwnPiece(Square square) =>
         Board[square] is { } piece && piece.Color == CurrentTurn;
 
+    /// <summary>
+    /// Legale Ziele einer Figur des Spielers am Zug. Leer, wenn die Partie vorbei ist
+    /// oder die Figur dem Gegner gehört.
+    /// </summary>
     public IReadOnlyList<Square> GetMoves(Square from)
     {
         if (IsOver || !IsOwnPiece(from))
@@ -76,6 +88,11 @@ public class Game
             .OrderByDescending(p => Value(p.Type))
             .ToList();
 
+    /// <summary>
+    /// Führt einen Zug aus, wenn er legal ist. Ablauf: prüfen, Notation berechnen, ziehen,
+    /// Rochaderechte und en passant aktualisieren, Spieler wechseln, Status neu bestimmen.
+    /// </summary>
+    /// <returns>true, wenn der Zug ausgeführt wurde.</returns>
     public bool TryMove(Square from, Square to, PieceType? promotion = null)
     {
         if (!GetMoves(from).Contains(to))
@@ -96,6 +113,7 @@ public class Game
         ApplyMove(Board, from, to, promoteTo);
         UpdateCastlingRights(from, to);
 
+        // Nur nach einem Doppelschritt wird das übersprungene Feld gemerkt, bei jedem anderen Zug gelöscht.
         _enPassantTarget = piece.Type == PieceType.Pawn && Math.Abs(to.Rank - from.Rank) == 2
             ? new Square((from.Rank + to.Rank) / 2, from.File)
             : null;
@@ -105,6 +123,7 @@ public class Game
         CurrentTurn = Opponent(CurrentTurn);
         UpdateStatus();
 
+        // Das + (Schach) oder # (Matt) kennt man erst nach dem Zug, deshalb wird es hier angehängt.
         var suffix = Status == GameStatus.Checkmate
             ? "#"
             : IsKingAttacked(Board, CurrentTurn) ? "+" : "";
@@ -160,6 +179,7 @@ public class Game
 
     // ---------- Notation ----------
 
+    // Welche Figur wird geschlagen? Bei en passant steht sie nicht auf dem Zielfeld, sondern daneben.
     private Piece? GetCapturedPiece(Square from, Square to)
     {
         if (Board[to] is { } target)
@@ -181,6 +201,8 @@ public class Game
             ? type.Value
             : PieceType.Queen;
 
+    // Schachnotation: Figurbuchstabe (Bauer ohne), bei Mehrdeutigkeit Linie oder Reihe, x beim Schlagen,
+    // Zielfeld, =Q bei Umwandlung, O-O und O-O-O bei Rochade. + und # kommen erst in TryMove dazu.
     private string BuildNotation(Square from, Square to, Piece piece, bool isCapture, PieceType? promotion)
     {
         // Rochade
@@ -321,6 +343,8 @@ public class Game
         }
     }
 
+    // Prüft Start- und Zielfeld: Zieht König oder Turm weg, oder wird ein Turm auf seinem
+    // Ausgangsfeld geschlagen, verfällt das jeweilige Rochaderecht. Zurückziehen bringt es nicht zurück.
     private void UpdateCastlingRights(Square from, Square to)
     {
         foreach (var square in new[] { from, to })
@@ -334,6 +358,8 @@ public class Game
         }
     }
 
+    // Aus möglichen Zügen werden legale: Grundzüge und Sonderzüge sammeln, dann alle entfernen,
+    // die den eigenen König im Schach lassen würden.
     private List<Square> GetLegalMoves(Square from)
     {
         var moves = MoveGenerator.GetMoves(Board, from);
@@ -344,6 +370,8 @@ public class Game
             .ToList();
     }
 
+    // Ergänzt, was vom Spielverlauf abhängt und deshalb nicht im MoveGenerator steht:
+    // en passant (braucht den letzten Gegnerzug) und Rochade (braucht die Rochaderechte).
     private void AddSpecialMoves(Square from, List<Square> moves)
     {
         if (Board[from] is not { } piece)
@@ -366,6 +394,9 @@ public class Game
         }
     }
 
+    // Rochade nur, wenn: Recht noch da, Turm steht auf seinem Feld, Felder dazwischen leer,
+    // König nicht im Schach und weder Durchgangsfeld noch Zielfeld angegriffen.
+    // Bei der langen Rochade muss b1 (b8) nur leer sein, es darf angegriffen sein.
     private void AddCastlingMoves(Square from, PieceColor color, List<Square> moves)
     {
         var rank = color == PieceColor.White ? 7 : 0;
@@ -410,6 +441,9 @@ public class Game
     private bool IsRook(int rank, int file, PieceColor color) =>
         Board[rank, file] is { Type: PieceType.Rook } rook && rook.Color == color;
 
+    // Kernstück der Regelprüfung: Der Zug wird auf einer KOPIE des Bretts ausgeführt (mit ApplyMove,
+    // derselben Methode wie beim echten Zug) und danach geprüft, ob der eigene König angegriffen wird.
+    // So sind Fesselungen, Königszüge auf bedrohte Felder und en passant ohne Sonderlogik abgedeckt.
     private bool LeavesKingInCheck(Square from, Square to)
     {
         var copy = Board.Clone();
