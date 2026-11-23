@@ -186,6 +186,76 @@ Datenbank per Migration anlegen, Login und Registrierung in die Navigation einba
 - **Kleinigkeiten, die Zeit gekostet haben:** der Bauer als Emoji statt als Symbol (gelöst mit einem Unicode-Zusatzzeichen), Zeilenenden-Warnung in Visual Studio, die Migration lag in `Data/Migrations` und nicht dort, wo ich sie zuerst vermutet hatte.
 
 ---
+## Tests
+ 
+Weil die Schachlogik in `Models` weder Blazor noch die Datenbank kennt, kann ich sie ohne Browser automatisch testen. Dafür habe ich **10 Unit-Tests mit xUnit** geschrieben. Sie liegen im Ordner `Chess/Tests`.
+ 
+### Wofür sind die Tests da?
+Schachregeln hängen stark zusammen. Ändere ich zum Beispiel etwas an der Schach-Prüfung, kann dadurch plötzlich die Rochade oder das Matt kaputtgehen, ohne dass ich es sofort merke. Die Tests prüfen das in wenigen Sekunden. Wenn alles grün ist, funktionieren die getesteten Regeln noch.
+ 
+### Wie ist ein Test aufgebaut?
+Jeder Test folgt dem Muster **Arrange, Act, Assert**:
+ 
+1. **Arrange (vorbereiten):** ein neues Spiel und gegebenenfalls ein paar Züge, um die gewünschte Stellung herzustellen
+2. **Act (ausführen):** der Zug oder die Abfrage, die getestet wird
+3. **Assert (prüfen):** Vergleich des Ergebnisses mit dem erwarteten Wert. Stimmt es nicht, wird der Test rot.
+`[Fact]` über einer Methode markiert sie für xUnit als Test. Jeder Test startet mit einem frischen `new Game()`, deshalb beeinflussen sich die Tests nicht gegenseitig.
+ 
+Ein Beispiel, das Narrenmatt (das kürzeste mögliche Matt):
+ 
+```csharp
+[Fact]
+public void FoolsMate_IsCheckmate_AndBlackWins()
+{
+    var game = new Game();                                         // Arrange
+ 
+    Play(game, "f2-f3", "e7-e5", "g2-g4", "d8-h4");                // Act
+ 
+    Assert.Equal(GameStatus.Checkmate, game.Status);               // Assert
+    Assert.Equal(PieceColor.Black, game.Winner);
+    Assert.Equal("0-1", game.Result);
+    Assert.Equal("Qh4#", game.Moves.Last().Notation);
+}
+```
+ 
+Intern ist das Brett eine Tabelle aus Zahlen (Reihe 0 ist oben die 8. Reihe). Damit die Tests lesbar bleiben, übersetzt die Hilfsmethode `Sq("e2")` den Schachnamen in diese Zahlen, und `Play(...)` spielt mehrere Züge hintereinander und schlägt fehl, wenn einer davon verboten ist.
+ 
+### Was wird getestet?
+ 
+| Datei | Test | Was er prüft |
+|---|---|---|
+| `MoveRuleTests` | Springer in der Grundstellung | Der Springer auf g1 hat genau zwei Züge (f3, h3), weil e2 durch den eigenen Bauern blockiert ist |
+| | Bauer auf der Grundlinie | Der Bauer auf e2 darf ein oder zwei Felder vor |
+| | Gegnerische Figur ziehen | Weiß kann keinen schwarzen Bauern ziehen, das Zugrecht bleibt bei Weiß |
+| | Gefesselter Bauer | Ein Bauer, der den König vor einem Läufer schützt, darf nicht ziehen (Selbstschach-Prüfung) |
+| `SpecialMoveTests` | Kurze Rochade | König landet auf g1, Turm auf f1, Notation `O-O` |
+| | Rochade nach Königszug | Ist der König einmal gezogen, auch wenn er zurückkehrt, ist die Rochade verboten |
+| | En passant | Der Bauer schlägt auf ein leeres Feld, der übersprungene Bauer verschwindet, Notation `exd6` |
+| | Umwandlung | Der Bauer wird zur gewählten Figur, Notation `axb8=N` |
+| `GameEndTests` | Narrenmatt | Status Schachmatt, Schwarz gewinnt, Ergebnis `0-1`, Notation `Qh4#` |
+| | Dreifache Wiederholung | Nach dem zweiten Mal läuft die Partie weiter, nach dem dritten Mal ist sie Remis |
+ 
+### Tests ausführen
+- **Visual Studio:** `Test` → `Test-Explorer` → „Alle Tests ausführen“. Grüne Häkchen bedeuten bestanden.
+- **Konsole:** im Repository-Ordner `dotnet test Chess`. Dabei darf die App nicht gleichzeitig laufen, sonst ist die Programmdatei gesperrt.
+### Wie ich geprüft habe, dass die Tests wirklich etwas taugen
+Alle Tests waren grün, aber ein grüner Test beweist nur etwas, wenn er auch rot werden kann. Deshalb habe ich absichtlich Regeln im Code kaputtgemacht und geschaut, ob die Tests anschlagen. Zum Beispiel:
+- Das Rochaderecht nicht mehr verfallen lassen: Der Test „Rochade nach Königszug“ wird rot.
+- Die Wiederholungsgrenze von 3 auf 2 senken: Der Test zur dreifachen Wiederholung wird rot.
+- Die Selbstschach-Prüfung abschalten: Der Test zum gefesselten Bauern und das Narrenmatt werden rot.
+Danach habe ich die Änderungen mit `git restore` zurückgenommen und die Tests wieder grün laufen lassen.
+ 
+### Was die Tests nicht abdecken
+Zehn Tests sind Beispiele für die wichtigsten Regeln, keine vollständige Abdeckung. Nicht getestet sind zum Beispiel:
+- Patt, die 50-Züge-Regel und zu wenig Material
+- Die Notation bei Mehrdeutigkeit (`Nbd2`)
+- Das Aufgeben und Remis anbieten
+- Die Datenbank und die Oberfläche (Speichern, „Meine Partien“, „Partie ansehen“)
+### Warum liegen die Tests im selben Projekt?
+Das Projekt ist klein, deshalb habe ich die Tests in den Ordner `Tests` gelegt. Üblich bei größeren Projekten ist ein eigenes Testprojekt (`Chess.Tests`), damit die Test-Pakete nicht in der fertigen App landen. Das ließe sich später leicht nachholen, weil die Tests nur die Klassen aus `Models` benutzen.
+ 
+---
+ 
 
 ## Wie ich mit der KI gearbeitet habe
 
