@@ -41,3 +41,5 @@
     .btn-primary:hover, .btn-danger:hover { @apply -translate-y-0.5 shadow-lg; }
 
 
+
+.card { @apply rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-md; }
