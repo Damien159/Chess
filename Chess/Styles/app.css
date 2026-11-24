@@ -20,7 +20,7 @@
 
     .form-floating { @apply mb-4 flex flex-col; }
     .form-floating > label { @apply order-first mb-1 text-sm text-slate-400; }
-    .form-control { @apply w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none focus:border-emerald-500; }
+    .form-control { @apply w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-100 outline-none transition-colors duration-200 focus:border-emerald-500; }
 
     .btn { @apply cursor-pointer rounded-xl px-4 py-2 font-medium text-white transition-all duration-200 ease-in-out; }
     .btn-lg { @apply px-6 py-3; }
@@ -39,3 +39,4 @@
 
 
     .btn-primary:hover, .btn-danger:hover { @apply -translate-y-0.5 shadow-lg; }
+
