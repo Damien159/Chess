@@ -10,7 +10,7 @@
     h1 { @apply mb-4 text-2xl font-bold; }
     h2 { @apply mb-3 text-xl font-semibold; }
     h3 { @apply mb-3 text-lg font-semibold; }
-    hr { @apply my-4 border-slate-700; }
+    hr { @apply my-4 border-slate-800; }
     main a:not([class]) { @apply text-emerald-400 hover:underline; }
 }
 
@@ -45,3 +45,4 @@
 .card { @apply rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-md; }
 
 .card-hover { @apply transition-all duration-200 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-lg; }
+
