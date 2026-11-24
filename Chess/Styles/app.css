@@ -64,3 +64,5 @@
 .custom-scrollbar::-webkit-scrollbar-thumb {
     @apply rounded-full bg-slate-600 hover:bg-slate-500;
 }
+
+.selected { @apply border-2 border-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/10; }
