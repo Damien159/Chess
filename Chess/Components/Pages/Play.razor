@@ -14,6 +14,18 @@
 <div class="flex flex-col items-center gap-6">
     <h1 class="text-2xl font-bold">Spielen</h1>
 
+    <div class="flex flex-wrap justify-center gap-2 text-sm">
+        <button @onclick="() => SetModeAsync(null)" disabled="@_thinking" class="@ModeClass(null)">
+            Zwei Spieler
+        </button>
+        <button @onclick="() => SetModeAsync(PieceColor.White)" disabled="@_thinking" class="@ModeClass(PieceColor.White)">
+            Gegen Computer (ich: Weiß)
+        </button>
+        <button @onclick="() => SetModeAsync(PieceColor.Black)" disabled="@_thinking" class="@ModeClass(PieceColor.Black)">
+            Gegen Computer (ich: Schwarz)
+        </button>
+    </div>
+
     <div class="text-center">
         <p class="@StatusClass text-lg font-semibold">@StatusText</p>
 
@@ -35,7 +47,8 @@
     </div>
 
     <div class="flex w-full flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
-        <div class="w-full max-w-[560px] shrink-0 lg:w-[560px]">
+        @* Solange der Computer am Zug ist, sind Klicks auf das Brett gesperrt *@
+        <div class="w-full max-w-[560px] shrink-0 lg:w-[560px] @(IsComputerTurn ? "pointer-events-none" : "")">
             <ChessBoard @key="_game" Game="_game" Flipped="_flipped" OnMoved="HandleMoved" />
         </div>
 
@@ -67,16 +80,17 @@
                         class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
                     Brett drehen
                 </button>
-                <button @onclick="NewGame"
-                        class="rounded-xl bg-emerald-600 px-4 py-2 text-sm hover:bg-emerald-500">
+                <button @onclick="StartNewGameAsync" disabled="@_thinking"
+                        class="rounded-xl bg-emerald-600 px-4 py-2 text-sm hover:bg-emerald-500 disabled:opacity-60">
                     Neue Partie
                 </button>
             </div>
 
-            @if (!_game.IsOver)
+            @if (!_game.IsOver && !_thinking)
             {
                 <div class="flex flex-wrap items-center gap-2">
-                    @if (_game.DrawOfferedBy is null)
+                    @* Remis anbieten gibt es nur zwischen zwei Menschen *@
+                    @if (!VsComputer && _game.DrawOfferedBy is null)
                     {
                         <button @onclick="OfferDraw"
                                 class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
@@ -86,7 +100,7 @@
 
                     @if (_confirmResign)
                     {
-                        <span class="text-sm text-slate-300">@TurnName wirklich aufgeben?</span>
+                        <span class="text-sm text-slate-300">@ColorName(ResignColor) wirklich aufgeben?</span>
                         <button @onclick="Resign"
                                 class="rounded-xl bg-red-600 px-4 py-2 text-sm hover:bg-red-500">
                             Ja
@@ -100,7 +114,7 @@
                     {
                         <button @onclick="() => _confirmResign = true"
                                 class="rounded-xl bg-slate-800 px-4 py-2 text-sm text-red-300 hover:bg-slate-700">
-                            @TurnName gibt auf
+                            @ColorName(ResignColor) gibt auf
                         </button>
                     }
                 </div>
@@ -115,9 +129,23 @@
     private bool _flipped;
     private bool _confirmResign;
     private string? _userId;
+
     // Datenbank-Id der Partie. Bleibt null bis zum ersten gespeicherten Zug.
     private int? _storedId;
     private bool _saveFailed;
+
+    // Farbe des Menschen. null bedeutet: zwei Spieler am selben Bildschirm.
+    private PieceColor? _humanColor;
+    private bool _thinking;
+    private readonly ComputerPlayer _computer = new();
+
+    private bool VsComputer => _humanColor is not null;
+
+    private bool IsComputerTurn =>
+        _humanColor is { } human && !_game.IsOver && _game.CurrentTurn != human;
+
+    // Gegen den Computer gibt immer der Mensch auf, bei zwei Spielern der Spieler am Zug
+    private PieceColor ResignColor => _humanColor ?? _game.CurrentTurn;
 
     // Liest die Id des angemeldeten Benutzers. Ohne Anmeldung wird nichts gespeichert, gespielt werden kann trotzdem.
     protected override async Task OnInitializedAsync()
@@ -126,18 +154,61 @@
         _userId = state.User.FindFirstValue(ClaimTypes.NameIdentifier);
     }
 
-    private void NewGame()
+    // Moduswechsel startet immer eine neue Partie. Spielt der Mensch Schwarz, wird das Brett
+    // gedreht und der Computer macht den ersten Zug.
+    private async Task SetModeAsync(PieceColor? humanColor)
+    {
+        _humanColor = humanColor;
+        _flipped = humanColor == PieceColor.Black;
+        await StartNewGameAsync();
+    }
+
+    private async Task StartNewGameAsync()
     {
         _game = new Game();
         _storedId = null;
         _saveFailed = false;
         _confirmResign = false;
+        await PlayComputerMoveAsync();
     }
 
+    // Wird vom Brett aufgerufen, nachdem der Mensch gezogen hat
     private async Task HandleMoved()
     {
         _confirmResign = false;
         await SaveAsync();
+        await PlayComputerMoveAsync();
+    }
+
+    // Der Computer rechnet in einem Hintergrund-Task, damit die Oberfläche nicht einfriert.
+    // Die kurze Pause sorgt dafür, dass man seinen Zug sieht, bevor der Computer antwortet.
+    private async Task PlayComputerMoveAsync()
+    {
+        if (!IsComputerTurn)
+        {
+            return;
+        }
+
+        var game = _game;
+        _thinking = true;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(400);
+            var move = await Task.Run(() => _computer.ChooseMove(game));
+
+            // Falls inzwischen eine neue Partie begonnen wurde, wird der alte Zug verworfen
+            if (move is not null && ReferenceEquals(game, _game))
+            {
+                game.TryMove(move.From, move.To, move.Promotion);
+                await SaveAsync();
+            }
+        }
+        finally
+        {
+            _thinking = false;
+        }
     }
 
     private void OfferDraw() => _game.OfferDraw(_game.CurrentTurn);
@@ -152,7 +223,7 @@
 
     private async Task Resign()
     {
-        _game.Resign(_game.CurrentTurn);
+        _game.Resign(ResignColor);
         _confirmResign = false;
         await SaveAsync();
     }
@@ -178,22 +249,28 @@
         }
     }
 
+    private string ModeClass(PieceColor? mode) => _humanColor == mode
+        ? "rounded-xl bg-emerald-600 px-4 py-2 disabled:opacity-60"
+        : "rounded-xl bg-slate-800 px-4 py-2 hover:bg-slate-700 disabled:opacity-60";
+
     private static string ColorName(PieceColor color) => color == PieceColor.White ? "Weiß" : "Schwarz";
 
     private string TurnName => ColorName(_game.CurrentTurn);
 
-    private string StatusText => _game.Status switch
-    {
-        GameStatus.Check => $"Schach! {TurnName} ist am Zug",
-        GameStatus.Checkmate => $"Schachmatt! {ColorName(_game.Winner!.Value)} gewinnt",
-        GameStatus.Resigned => $"{ColorName(_game.Winner!.Value)} gewinnt durch Aufgabe",
-        GameStatus.Stalemate => "Patt – Unentschieden",
-        GameStatus.DrawByRepetition => "Remis durch dreifache Stellungswiederholung",
-        GameStatus.DrawByFiftyMoveRule => "Remis durch die 50-Züge-Regel",
-        GameStatus.DrawByInsufficientMaterial => "Remis – zu wenig Material für ein Matt",
-        GameStatus.DrawByAgreement => "Remis durch Einigung",
-        _ => $"Am Zug: {TurnName}"
-    };
+    private string StatusText => _thinking
+        ? "Computer denkt nach …"
+        : _game.Status switch
+        {
+            GameStatus.Check => $"Schach! {TurnName} ist am Zug",
+            GameStatus.Checkmate => $"Schachmatt! {ColorName(_game.Winner!.Value)} gewinnt",
+            GameStatus.Resigned => $"{ColorName(_game.Winner!.Value)} gewinnt durch Aufgabe",
+            GameStatus.Stalemate => "Patt – Unentschieden",
+            GameStatus.DrawByRepetition => "Remis durch dreifache Stellungswiederholung",
+            GameStatus.DrawByFiftyMoveRule => "Remis durch die 50-Züge-Regel",
+            GameStatus.DrawByInsufficientMaterial => "Remis – zu wenig Material für ein Matt",
+            GameStatus.DrawByAgreement => "Remis durch Einigung",
+            _ => $"Am Zug: {TurnName}"
+        };
 
     private string StatusClass => _game.Status switch
     {
