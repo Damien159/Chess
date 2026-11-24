@@ -43,3 +43,5 @@
 
 
 .card { @apply rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-md; }
+
+.card-hover { @apply transition-all duration-200 hover:-translate-y-1 hover:border-emerald-500/50 hover:shadow-lg; }
