@@ -20,4 +20,22 @@ internal static class TestHelper
             Assert.True(ok, $"Der Zug {move} sollte erlaubt sein, war es aber nicht.");
         }
     }
+
+    // Räumt das Brett leer und stellt nur die angegebenen Figuren auf.
+    // So lassen sich Stellungen testen, die man mit Zügen kaum erreicht (zum Beispiel König gegen König).
+    public static void SetUp(Game game, params (string At, PieceType Type, PieceColor Color)[] pieces)
+    {
+        for (var rank = 0; rank < 8; rank++)
+        {
+            for (var file = 0; file < 8; file++)
+            {
+                game.Board.Set(new Square(rank, file), null);
+            }
+        }
+
+        foreach (var (at, type, color) in pieces)
+        {
+            game.Board.Set(Sq(at), new Piece(type, color));
+        }
+    }
 }
