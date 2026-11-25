@@ -1,28 +1,14 @@
 ﻿@page "/"
-@rendermode InteractiveServer
 
 <PageTitle>ChessPlatform</PageTitle>
 
-<div class="mx-auto max-w-xl rounded-2xl border border-slate-800 bg-slate-900 p-8 text-center shadow-xl">
-    <h1 class="text-3xl font-bold">ChessPlatform</h1>
-    <p class="mt-3 text-slate-400">Willkommen auf meiner Schachplattform!</p>
+<div class="card mx-auto max-w-xl p-8 text-center">
+    <h1 class="text-3xl">ChessPlatform</h1>
+    <p class="text-slate-400">Willkommen auf meiner Schachplattform!</p>
+    <p class="mt-1 text-sm text-slate-500">
+        Spiele zu zweit an einem Bildschirm oder gegen den Computer.
+        Mit einem Konto werden deine Partien gespeichert.
+    </p>
 
-    <button @onclick="StartGame"
-            class="mt-6 rounded-xl bg-emerald-600 px-6 py-3 font-medium text-white hover:bg-emerald-500">
-        Neue Partie starten
-    </button>
-
-    @if (gameStarted)
-    {
-        <p class="mt-6 text-emerald-400">Deine erste Schachpartie wurde gestartet!</p>
-    }
+    <a href="play" class="btn btn-primary btn-lg mt-6">Partie starten</a>
 </div>
-
-@code {
-    private bool gameStarted = false;
-
-    private void StartGame()
-    {
-        gameStarted = true;
-    }
-}

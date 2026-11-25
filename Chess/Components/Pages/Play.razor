@@ -11,10 +11,10 @@
 
 <PageTitle>Spielen</PageTitle>
 
-<div class="flex flex-col items-center gap-6">
-    <h1 class="text-2xl font-bold">Spielen</h1>
+<div class="flex flex-col items-center gap-5">
+    <h1 class="mb-0">Spielen</h1>
 
-    <div class="flex flex-wrap justify-center gap-2 text-sm">
+    <div class="flex flex-wrap justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
         <button @onclick="() => SetModeAsync(null)" disabled="@_thinking" class="@ModeClass(null)">
             Zwei Spieler
         </button>
@@ -60,28 +60,20 @@
 
             @if (!_game.IsOver && _game.DrawOfferedBy is { } offerer)
             {
-                <div class="rounded-xl border border-yellow-500/50 bg-slate-900 p-3 text-sm">
+                <div class="rounded-xl border border-yellow-500/40 bg-slate-900 p-3 text-sm">
                     <p class="mb-2 text-yellow-300">@ColorName(offerer) bietet Remis an.</p>
                     <div class="flex gap-2">
-                        <button @onclick="AcceptDraw"
-                                class="rounded-lg bg-emerald-600 px-3 py-1.5 hover:bg-emerald-500">
-                            Annehmen
-                        </button>
-                        <button @onclick="DeclineDraw"
-                                class="rounded-lg bg-slate-700 px-3 py-1.5 hover:bg-slate-600">
-                            Ablehnen
-                        </button>
+                        <button @onclick="AcceptDraw" class="btn btn-primary">Annehmen</button>
+                        <button @onclick="DeclineDraw" class="btn btn-secondary">Ablehnen</button>
                     </div>
                 </div>
             }
 
             <div class="flex flex-wrap gap-2">
-                <button @onclick="() => _flipped = !_flipped"
-                        class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
+                <button @onclick="() => _flipped = !_flipped" class="btn btn-secondary">
                     Brett drehen
                 </button>
-                <button @onclick="StartNewGameAsync" disabled="@_thinking"
-                        class="rounded-xl bg-emerald-600 px-4 py-2 text-sm hover:bg-emerald-500 disabled:opacity-60">
+                <button @onclick="StartNewGameAsync" disabled="@_thinking" class="btn btn-primary">
                     Neue Partie
                 </button>
             </div>
@@ -92,28 +84,18 @@
                     @* Remis anbieten gibt es nur zwischen zwei Menschen *@
                     @if (!VsComputer && _game.DrawOfferedBy is null)
                     {
-                        <button @onclick="OfferDraw"
-                                class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
-                            Remis anbieten
-                        </button>
+                        <button @onclick="OfferDraw" class="btn btn-secondary">Remis anbieten</button>
                     }
 
                     @if (_confirmResign)
                     {
                         <span class="text-sm text-slate-300">@ColorName(ResignColor) wirklich aufgeben?</span>
-                        <button @onclick="Resign"
-                                class="rounded-xl bg-red-600 px-4 py-2 text-sm hover:bg-red-500">
-                            Ja
-                        </button>
-                        <button @onclick="() => _confirmResign = false"
-                                class="rounded-xl bg-slate-800 px-4 py-2 text-sm hover:bg-slate-700">
-                            Abbrechen
-                        </button>
+                        <button @onclick="Resign" class="btn btn-danger">Ja</button>
+                        <button @onclick="() => _confirmResign = false" class="btn btn-secondary">Abbrechen</button>
                     }
                     else
                     {
-                        <button @onclick="() => _confirmResign = true"
-                                class="rounded-xl bg-slate-800 px-4 py-2 text-sm text-red-300 hover:bg-slate-700">
+                        <button @onclick="() => _confirmResign = true" class="btn btn-secondary text-red-300">
                             @ColorName(ResignColor) gibt auf
                         </button>
                     }
@@ -250,8 +232,8 @@
     }
 
     private string ModeClass(PieceColor? mode) => _humanColor == mode
-        ? "rounded-xl bg-emerald-600 px-4 py-2 disabled:opacity-60"
-        : "rounded-xl bg-slate-800 px-4 py-2 hover:bg-slate-700 disabled:opacity-60";
+        ? "rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
+        : "rounded-md px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100 disabled:opacity-50";
 
     private static string ColorName(PieceColor color) => color == PieceColor.White ? "Weiß" : "Schwarz";
 
@@ -280,3 +262,4 @@
         _ => "text-yellow-400"
     };
 }
+

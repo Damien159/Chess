@@ -1,12 +1,16 @@
 ﻿@inherits LayoutComponentBase
 
 <div class="min-h-screen bg-slate-950 text-slate-100">
-    <header class="flex items-center justify-between border-b border-slate-800 bg-slate-900 px-6 py-4">
-        <a href="/" class="text-xl font-semibold">&#9823; ChessPlatform</a>
-        <NavMenu />
+    <header class="border-b border-slate-800 bg-slate-900">
+        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
+            <a href="/" class="text-lg font-semibold text-slate-100">
+                <span class="text-emerald-500">&#9823;&#xFE0E;</span> ChessPlatform
+            </a>
+            <NavMenu />
+        </div>
     </header>
 
-    <main class="mx-auto max-w-6xl px-6 py-10">
+    <main class="mx-auto max-w-6xl px-6 py-8">
         @Body
     </main>
 </div>
