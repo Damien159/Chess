@@ -1,6 +1,6 @@
 # ♟ ChessPlatform
 
-Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET)** gebaut habe. Man kann eine vollständige Partie nach den echten Schachregeln spielen, sich registrieren und anmelden, und die eigenen Partien werden in einer Datenbank gespeichert und lassen sich später Zug für Zug wieder ansehen.
+Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET)** gebaut habe. Man kann eine vollständige Partie nach den echten Schachregeln spielen (zu zweit oder gegen den Computer), sich registrieren und anmelden, und die eigenen Partien werden in einer Datenbank gespeichert und lassen sich später Zug für Zug wieder ansehen.
 
 > Dieses Projekt ist auch ein Lernprojekt. Ich wollte nicht nur etwas haben, das läuft, sondern verstehen, **warum** es läuft. Unten im Abschnitt „Wie ich mit der KI gearbeitet habe“ steht genau, wie ich dabei vorgegangen bin.
 
@@ -14,10 +14,11 @@ Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET
 4. [Projektstruktur](#projektstruktur)
 5. [So habe ich es gebaut (Schritt für Schritt)](#so-habe-ich-es-gebaut-schritt-für-schritt)
 6. [Was war einfach, was war kompliziert?](#was-war-einfach-was-war-kompliziert)
-7. [Wie ich mit der KI gearbeitet habe](#wie-ich-mit-der-ki-gearbeitet-habe)
-8. [Projekt starten](#projekt-starten)
-9. [Aktueller Stand](#aktueller-stand)
-10. [Wie es weitergehen soll](#wie-es-weitergehen-soll)
+7. [Tests](#tests)
+8. [Wie ich mit der KI gearbeitet habe](#wie-ich-mit-der-ki-gearbeitet-habe)
+9. [Projekt starten](#projekt-starten)
+10. [Aktueller Stand](#aktueller-stand)
+11. [Wie es weitergehen soll](#wie-es-weitergehen-soll)
 
 ---
 
@@ -35,12 +36,16 @@ Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET
 - Anzeige der geschlagenen Figuren
 - Aufgeben (mit Nachfrage) und Remis anbieten / annehmen / ablehnen
 - Brett drehen und neue Partie starten
+- Spielmodus: zu zweit an einem Bildschirm oder gegen den Computer (er spielt zufällige legale Züge, ich wähle Weiß oder Schwarz)
 
 **Die Plattform**
 - Registrieren, Anmelden und Abmelden
 - Angemeldete Benutzer: Die Partie wird nach jedem Zug automatisch in der Datenbank gespeichert
 - Seite **„Meine Partien“** mit Datum, Anzahl der Züge, Ergebnis und Ausgang
 - **Partie ansehen:** Ich kann mit Anfang / Zurück / Vor / Ende durch eine gespeicherte Partie gehen
+
+**Qualitätssicherung**
+- Automatische Unit-Tests (xUnit) für Zugregeln, Sonderzüge, Spielende und den Computergegner, siehe [Tests](#tests)
 
 ---
 
@@ -77,6 +82,12 @@ Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET
 <img width="1044" height="771" alt="image" src="https://github.com/user-attachments/assets/8eaa4039-8c47-4e3e-abc0-a94f8ba2e479" />
 <img width="1076" height="756" alt="image" src="https://github.com/user-attachments/assets/846a24b8-5a83-4bf5-ae97-9f293b6cc172" />
 
+### Startseite
+*Screenshot folgt*
+
+### Spielen gegen den Computer
+*Screenshot folgt*
+
 ### Die Datenbank in SQL Server Management Studio
 <!-- ![Datenbank](docs/screenshots/datenbank.png) -->
 *Screenshot folgt*
@@ -93,6 +104,7 @@ Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET
 | Datenbank | **SQL Server LocalDB** | Speichern der Benutzer und Partien |
 | Datenzugriff | **Entity Framework Core** mit Migrationen | Tabellen als C#-Klassen, Datenbank wird daraus erzeugt |
 | Datenbank ansehen | **SQL Server Management Studio (SSMS)** | Kontrolle, ob wirklich etwas in der Datenbank steht |
+| Tests | **xUnit** | Automatische Prüfung der Schachregeln |
 | Versionsverwaltung | **Git** | Viele kleine Commits, ein Schritt pro Commit |
 
 ---
@@ -113,13 +125,20 @@ Chess/
 │   ├── AttackChecker.cs   Wird ein Feld angegriffen? (für Schach)
 │   ├── Game.cs            Spielzustand, legale Züge, Sonderzüge, Remisregeln, Notation
 │   ├── GameStatus.cs      Laufend, Schach, Matt, Patt, Remis-Arten, Aufgabe
+│   ├── ComputerPlayer.cs  Computergegner: wählt einen legalen Zug
 │   └── MoveRecord.cs      Ein gespielter Zug mit Notation
 ├── Data/                Alles rund um die Datenbank
 │   ├── ApplicationDbContext.cs
 │   ├── GameEntities.cs    StoredGame und StoredMove (die Tabellen)
 │   ├── GameRepository.cs  Speichern und Laden von Partien
 │   └── Migrations/
-└── Styles/app.css       Tailwind-Eingabedatei mit meinen Brettfarben
+├── Tests/               Unit-Tests (xUnit) für die Schachlogik
+│   ├── TestHelper.cs        Hilfsmethoden: Sq("e2") und Play(game, "e2-e4", ...)
+│   ├── MoveRuleTests.cs     Zugregeln
+│   ├── SpecialMoveTests.cs  Rochade, en passant, Umwandlung
+│   ├── GameEndTests.cs      Schachmatt und Stellungswiederholung
+│   └── ComputerPlayerTests.cs  Computergegner
+└── Styles/app.css       Tailwind-Eingabedatei: Brettfarben, Buttons, Navigation
 ```
 
 **Wichtigste Idee dahinter:** Die Schachlogik im Ordner `Models` weiß nichts von Blazor und nichts von der Datenbank. Sie ist reines C#. Die Oberfläche fragt nur „welche Züge sind erlaubt?“ und „führe diesen Zug aus“. Dadurch konnte ich später die Datenbank dazubauen, ohne an den Schachregeln etwas zu ändern.
@@ -159,6 +178,12 @@ Zugliste in Notation, geschlagene Figuren, Aufgeben und Remis anbieten. Jeder Zu
 ### Schritt 7: Benutzer und Datenbank
 Datenbank per Migration anlegen, Login und Registrierung in die Navigation einbauen, dann zwei eigene Tabellen (`Games` und `Moves`), Speichern nach jedem Zug, die Seite „Meine Partien“ und die Ansicht zum Durchklicken.
 
+### Schritt 8: Computergegner (erste Stufe)
+Der Computer ist eine eigene Klasse `ComputerPlayer` im Ordner `Models`. Sie bekommt ein `Game`, sammelt alle legalen Züge der Seite am Zug und wählt zufällig einen aus. Die Legalität kommt aus `GetMoves`, deshalb kann der Computer keinen verbotenen Zug spielen. Auf der Spielen-Seite wähle ich zwischen zwei Spielern und dem Computer. Der Computer rechnet in einem Hintergrund-Task, damit die Oberfläche nicht hängt. Die nächste Stufe soll eine Stellungsbewertung mit Minimax bekommen.
+
+### Schritt 9: Design aufräumen
+Ich habe Buttons, Navigation und Karten auf gemeinsame Klassen umgestellt und eine neue Startseite gebaut. Dort steht ein echtes Brett als Vorschau: Die Stellung wird mit der Spiellogik gespielt und ist kein Bild.
+
 ---
 
 ## Was war einfach, was war kompliziert?
@@ -168,6 +193,7 @@ Datenbank per Migration anlegen, Login und Registrierung in die Navigation einba
 - **Die Zugregeln von Springer, König, Turm, Läufer und Dame.** Sobald die Muster „Einzelschritt“ und „Gleiten“ klar waren, war der Rest nur Wiederverwendung.
 - **Tailwind einrichten.** Ein paar Befehle, danach schreibt man die Klassen direkt in die Komponenten.
 - **Die Datenbank anlegen.** Mit Entity Framework reicht ein Befehl (`dotnet ef database update`), und die Tabellen stehen in SSMS.
+- **Der Zufallsgegner.** Alle legalen Züge sammeln und einen davon auswählen. Die Regelprüfung gab es schon, deshalb spielt der Computer nie einen verbotenen Zug.
 
 ### Mittel
 - **Auswahl und Zielfelder.** Man muss sich merken, was angeklickt wurde, und bei jedem weiteren Klick entscheiden: Ziel, andere eigene Figur oder Abbruch?
@@ -183,12 +209,13 @@ Datenbank per Migration anlegen, Login und Registrierung in die Navigation einba
 - **Dreifache Stellungswiederholung.** „Gleiche Stellung“ heißt nicht nur gleiche Figuren, sondern auch gleicher Spieler am Zug, gleiche Rochaderechte und gleiche en-passant-Möglichkeit.
 - **Schachnotation.** Wenn zwei gleiche Figuren dasselbe Feld erreichen können, muss man mit der Linie oder Reihe unterscheiden (`Nbd2`). Außerdem muss die Notation **vor** dem Zug berechnet werden, das `+` und das `#` kommen aber erst **danach** dazu.
 - **Bootstrap gegen Tailwind.** Die Login- und Registrierungsseiten der Vorlage benutzen Bootstrap-Klassen. Ohne Bootstrap sahen sie kaputt aus, deshalb habe ich in der `app.css` die wichtigsten Klassen für Tailwind nachgebaut.
+- **Vorlagen-CSS überschrieb Tailwind.** Links und Buttons blieben blau, obwohl ich Emerald eingestellt hatte. Die `wwwroot/app.css` der Vorlage steht außerhalb der CSS-Ebenen von Tailwind v4 und gewinnt dadurch immer. Ich habe die betreffenden Regeln dort entfernt.
 - **Kleinigkeiten, die Zeit gekostet haben:** der Bauer als Emoji statt als Symbol (gelöst mit einem Unicode-Zusatzzeichen), Zeilenenden-Warnung in Visual Studio, die Migration lag in `Data/Migrations` und nicht dort, wo ich sie zuerst vermutet hatte.
 
 ---
 ## Tests
  
-Weil die Schachlogik in `Models` weder Blazor noch die Datenbank kennt, kann ich sie ohne Browser automatisch testen. Dafür habe ich **10 Unit-Tests mit xUnit** geschrieben. Sie liegen im Ordner `Chess/Tests`.
+Weil die Schachlogik in `Models` weder Blazor noch die Datenbank kennt, kann ich sie ohne Browser automatisch testen. Dafür habe ich **14 Unit-Tests mit xUnit** geschrieben. Sie liegen im Ordner `Chess/Tests`.
  
 ### Wofür sind die Tests da?
 Schachregeln hängen stark zusammen. Ändere ich zum Beispiel etwas an der Schach-Prüfung, kann dadurch plötzlich die Rochade oder das Matt kaputtgehen, ohne dass ich es sofort merke. Die Tests prüfen das in wenigen Sekunden. Wenn alles grün ist, funktionieren die getesteten Regeln noch.
@@ -234,6 +261,10 @@ Intern ist das Brett eine Tabelle aus Zahlen (Reihe 0 ist oben die 8. Reihe). Da
 | | Umwandlung | Der Bauer wird zur gewählten Figur, Notation `axb8=N` |
 | `GameEndTests` | Narrenmatt | Status Schachmatt, Schwarz gewinnt, Ergebnis `0-1`, Notation `Qh4#` |
 | | Dreifache Wiederholung | Nach dem zweiten Mal läuft die Partie weiter, nach dem dritten Mal ist sie Remis |
+| `ComputerPlayerTests` | Legaler Zug | Der Computer wählt einen legalen Zug für die Farbe, die am Zug ist |
+| | Partie vorbei | Ist die Partie zu Ende (Narrenmatt), gibt er keinen Zug zurück |
+| | Gleicher Startwert | Mit demselben Startwert für den Zufall wählt er denselben Zug |
+| | Computer gegen Computer | Zwei Zufallsspieler spielen bis zum Ende, jeder Zug muss von `TryMove` akzeptiert werden |
  
 ### Tests ausführen
 - **Visual Studio:** `Test` → `Test-Explorer` → „Alle Tests ausführen“. Grüne Häkchen bedeuten bestanden.
@@ -246,7 +277,7 @@ Alle Tests waren grün, aber ein grüner Test beweist nur etwas, wenn er auch ro
 Danach habe ich die Änderungen mit `git restore` zurückgenommen und die Tests wieder grün laufen lassen.
  
 ### Was die Tests nicht abdecken
-Zehn Tests sind Beispiele für die wichtigsten Regeln, keine vollständige Abdeckung. Nicht getestet sind zum Beispiel:
+Die Tests sind Beispiele für die wichtigsten Regeln, keine vollständige Abdeckung. Nicht getestet sind zum Beispiel:
 - Patt, die 50-Züge-Regel und zu wenig Material
 - Die Notation bei Mehrdeutigkeit (`Nbd2`)
 - Das Aufgeben und Remis anbieten
@@ -264,6 +295,7 @@ Ich habe **Claude** als Hilfe benutzt, vor allem für:
 - den **Code** der einzelnen Schritte
 - **Erklärungen**, wenn ich etwas nicht verstanden habe (zum Beispiel: Brauche ich eine Datenbank? Was bedeutet diese Warnung?)
 - die **Fehlersuche**, wenn ich Fehlermeldungen oder Screenshots geschickt habe
+- die **Unit-Tests**: Die KI hat sie vorgeschlagen, ich habe jeden Test gelesen, die Zugfolgen nachvollzogen und sie durch absichtliches Kaputtmachen von Regeln geprüft
 
 **Meine Regel dabei: Ich kopiere nichts blind.**
 - Ich lese den Code, den die KI mir gibt, bevor ich ihn übernehme.
@@ -304,6 +336,8 @@ dotnet ef database update --project Chess
 
 Danach das Projekt in Visual Studio mit **Start (https)** ausführen.
 
+**Tests ausführen** (die App darf dabei nicht laufen): `dotnet test Chess`
+
 Während der Entwicklung kann `npm run css:watch` im Ordner `Chess` laufen, damit das CSS bei Änderungen automatisch neu gebaut wird.
 
 > In der Entwicklung wird keine echte E-Mail verschickt. Nach dem Registrieren zeigt die Seite einen Link zum Bestätigen des Kontos an.
@@ -316,19 +350,25 @@ Während der Entwicklung kann `npm run css:watch` im Ordner `Chess` laufen, dami
 - [x] Brett, Figuren, Zugregeln
 - [x] Schach, Schachmatt
 - [x] Rochade, en passant, Umwandlung
+- [x] Notation, geschlagene Figuren, Aufgeben, Remis anbieten
+- [x] Dreifache Stellungswiederholung (Unit-Test)
+- [x] Registrieren, Anmelden, Abmelden
+- [x] Partien werden nach jedem Zug gespeichert (Zeilen in `Games` und `Moves`)
+- [x] „Meine Partien“ und „Partie ansehen“
 - [x] Datenbank angelegt, Identity-Tabellen sichtbar in SSMS
-- [x] Migration für `Games` und `Moves` angewendet
+- [x] Die ersten 10 Unit-Tests laufen grün und schlagen an, wenn ich eine Regel absichtlich kaputtmache
+- [x] Neue Startseite und gemeinsames Design
 
-**Noch von mir zu testen / zu bestätigen**
-- [ ] Remisregeln (Wiederholung, 50-Züge-Regel, zu wenig Material)
-- [ ] Notation, geschlagene Figuren, Aufgeben, Remis anbieten
-- [ ] Registrieren, Anmelden, Abmelden
-- [ ] Partie wird nach jedem Zug gespeichert (Zeilen in `Games` und `Moves`)
-- [ ] „Meine Partien“ und „Partie ansehen“
+**Noch von mir zu bestätigen**
+- [ ] Computergegner von Hand ausprobiert
+- [ ] Die 4 Tests zum Computergegner laufen grün
+- [ ] 50-Züge-Regel und zu wenig Material
 
 **Bekannte Einschränkungen**
-- Beide Seiten spielen am selben Bildschirm.
+- Der Computer spielt nur zufällige legale Züge und ist deshalb sehr schwach.
+- Bei „Zwei Spieler“ sitzen beide am selben Bildschirm.
 - Angefangene Partien lassen sich noch nicht fortsetzen, sie erscheinen als „Unvollendet“ und sind nur zum Ansehen da.
+- Die Datenbank speichert nicht, ob der Gegner ein Computer war.
 - Die 50-Züge-Regel greift automatisch, im echten Schach muss man sie beantragen.
 - Keine Schachuhr.
 
@@ -336,12 +376,13 @@ Während der Entwicklung kann `npm run css:watch` im Ordner `Chess` laufen, dami
 
 ## Wie es weitergehen soll
 
+- **Computergegner mit Minimax:** Stellungen nach Materialwert bewerten, ein paar Züge vorausrechnen, Stärke wählbar
 - **Online-Partien** zwischen zwei angemeldeten Benutzern (SignalR), mit Einladung, Lobby und getrennten Buttons für Aufgeben und Remis
-- **Computergegner**, zuerst mit zufälligen Zügen, dann mit einer einfachen Bewertung (Minimax)
 - Angefangene Partien fortsetzen
 - Schachuhr
 - Wertungen und Statistiken
-- Tests für die Schachlogik (zum Beispiel bekannte Stellungen und Zugzahlen)
+- Mehr Tests: Patt, 50-Züge-Regel, zu wenig Material, Notation bei Mehrdeutigkeit
+- Tests in ein eigenes Projekt (`Chess.Tests`) auslagern
 
 ---
 
