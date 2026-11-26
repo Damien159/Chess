@@ -2,7 +2,7 @@
 
 @* Das Brett: 64 ChessSquare-Komponenten. Beim Drehen (Flipped) werden nur die Indizes gespiegelt, *@
 @* die Spiellogik bleibt gleich. *@
-<div class="relative w-full max-w-[560px]">
+<div class="relative w-full">
     <div class="grid w-full grid-cols-8 overflow-hidden rounded-xl shadow-2xl">
         @for (var row = 0; row < 8; row++)
         {
@@ -147,3 +147,4 @@
         _targets = Array.Empty<Square>();
     }
 }
+
