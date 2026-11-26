@@ -1,90 +1,52 @@
 ﻿@page "/"
-@using Microsoft.AspNetCore.Components.Authorization
-@using Chess.Components.Game
-@using Chess.Models
 
 <PageTitle>ChessPlatform</PageTitle>
 
-<section class="grid items-center gap-10 py-4 lg:grid-cols-2 lg:gap-16 lg:py-10">
-    <div>
-        <h1 class="mb-4 text-4xl font-semibold tracking-tight sm:text-5xl">Schach im Browser</h1>
-        <p class="max-w-md text-lg text-slate-400">
-            Spiele zu zweit an einem Bildschirm oder gegen den Computer.
-            Mit einem Konto werden deine Partien gespeichert.
-        </p>
+<section class="mx-auto max-w-3xl py-8 text-center sm:py-14">
+    <span class="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-300">
+        Schach im Browser
+    </span>
 
-        <div class="mt-8 flex flex-wrap gap-3">
-            <AuthorizeView>
-                <Authorized>
-                    <a href="play" class="btn btn-primary btn-lg">Partie starten</a>
-                    <a href="games" class="btn btn-secondary btn-lg">Meine Partien</a>
-                </Authorized>
-                <NotAuthorized>
-                    <a href="play" class="btn btn-primary btn-lg">Partie starten</a>
-                    <a href="Account/Register" class="btn btn-secondary btn-lg">Konto erstellen</a>
-                </NotAuthorized>
-            </AuthorizeView>
-        </div>
-    </div>
+    <h1 class="mt-6 mb-0 text-4xl font-bold tracking-tight text-white sm:text-6xl">
+        Spiele Schach mit allen <span class="text-emerald-400">offiziellen Regeln</span>
+    </h1>
 
-    @* Reine Dekoration: keine Klicks, für Screenreader ausgeblendet *@
-    <div class="w-full max-w-md justify-self-center lg:justify-self-end" aria-hidden="true">
-        <div class="grid aspect-square grid-cols-8 overflow-hidden rounded-lg shadow-2xl shadow-black/40 ring-1 ring-slate-800">
-            @for (var rank = 0; rank < 8; rank++)
-            {
-                for (var file = 0; file < 8; file++)
-                {
-                    var piece = _preview.Board[rank, file];
-                    <div class="flex aspect-square items-center justify-center @((rank + file) % 2 == 0 ? "bg-board-light" : "bg-board-dark")">
-                        @if (piece is not null)
-                        {
-                            <ChessPiece Piece="piece" />
-                        }
-                    </div>
-                }
-            }
-        </div>
+    <p class="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-400">
+        Zu zweit an einem Bildschirm oder gegen den Computer. Mit einem Konto werden deine Partien
+        gespeichert, und du kannst sie Zug für Zug nachspielen.
+    </p>
+
+    <div class="mt-10 flex flex-wrap justify-center gap-3">
+        <a href="play" class="btn btn-lg btn-primary">Jetzt spielen</a>
+
+        <AuthorizeView>
+            <Authorized>
+                <a href="games" class="btn btn-lg btn-secondary">Meine Partien</a>
+            </Authorized>
+            <NotAuthorized>
+                <a href="Account/Register" class="btn btn-lg btn-secondary">Konto erstellen</a>
+            </NotAuthorized>
+        </AuthorizeView>
     </div>
 </section>
 
-<dl class="mt-10 grid gap-8 border-t border-slate-800 pt-8 sm:grid-cols-3">
-    <div>
-        <dt class="text-sm font-medium text-slate-200">Alle Regeln</dt>
-        <dd class="mt-1 text-sm text-slate-400">
-            Rochade, en passant, Umwandlung, Schachmatt, Patt und die Remisregeln sind umgesetzt.
-        </dd>
+<section class="mx-auto mt-6 grid max-w-5xl gap-4 sm:grid-cols-3">
+    <div class="panel">
+        <h3 class="mb-2 text-base">Vollständige Regeln</h3>
+        <p class="text-sm leading-relaxed text-slate-400">
+            Rochade, en passant, Umwandlung, Schachmatt, Patt und Remis durch Wiederholung oder 50-Züge-Regel.
+        </p>
     </div>
-    <div>
-        <dt class="text-sm font-medium text-slate-200">Zugliste</dt>
-        <dd class="mt-1 text-sm text-slate-400">
-            Jeder Zug wird in Schachnotation mitgeschrieben, zum Beispiel Nf3 oder Qh4#.
-        </dd>
+    <div class="panel">
+        <h3 class="mb-2 text-base">Gegen den Computer</h3>
+        <p class="text-sm leading-relaxed text-slate-400">
+            Wähle deine Farbe und spiele gegen den Computer, oder zu zweit an einem Bildschirm.
+        </p>
     </div>
-    <div>
-        <dt class="text-sm font-medium text-slate-200">Eigene Partien</dt>
-        <dd class="mt-1 text-sm text-slate-400">
-            Mit einem Konto werden Partien gespeichert und lassen sich Zug für Zug nachspielen.
-        </dd>
+    <div class="panel">
+        <h3 class="mb-2 text-base">Deine Partien</h3>
+        <p class="text-sm leading-relaxed text-slate-400">
+            Mit einem Konto wird jede Partie gespeichert. Später spielst du sie Zug für Zug nach.
+        </p>
     </div>
-</dl>
-
-@code {
-    // Stellung nach 1.e4 e5 2.Sf3 Sc6 3.Lc4 Sf6, gespielt mit der echten Spiellogik
-    private readonly Game _preview = CreatePreview();
-
-    private static Game CreatePreview()
-    {
-        var game = new Game();
-        string[] moves = ["e2-e4", "e7-e5", "g1-f3", "b8-c6", "f1-c4", "g8-f6"];
-
-        foreach (var move in moves)
-        {
-            game.TryMove(Square(move[..2]), Square(move[3..]));
-        }
-
-        return game;
-    }
-
-    // "e2" wird zu Reihe 6, Linie 4 (Reihe 0 ist die 8. Reihe)
-    private static Square Square(string name) => new(8 - (name[1] - '0'), name[0] - 'a');
-}
+</section>
