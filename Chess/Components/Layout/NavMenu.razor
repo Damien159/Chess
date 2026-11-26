@@ -1,24 +1,23 @@
 ﻿@implements IDisposable
-@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager NavigationManager
 
-<nav class="flex items-center gap-1">
-    <NavLink href="" Match="NavLinkMatch.All" class="nav-link">Home</NavLink>
-    <NavLink href="play" class="nav-link">Spielen</NavLink>
+<nav class="flex flex-wrap items-center gap-1">
+    <NavLink href="" Match="NavLinkMatch.All" class="nav-item-link">Home</NavLink>
+    <NavLink href="play" class="nav-item-link">Spielen</NavLink>
 
     <AuthorizeView>
         <Authorized>
-            <NavLink href="games" class="nav-link">Meine Partien</NavLink>
-            <NavLink href="Account/Manage" class="nav-link">@context.User.Identity?.Name</NavLink>
-            <form action="Account/Logout" method="post">
+            <NavLink href="games" class="nav-item-link">Meine Partien</NavLink>
+            <NavLink href="Account/Manage" class="nav-item-link hidden sm:block">@context.User.Identity?.Name</NavLink>
+            <form action="Account/Logout" method="post" class="ml-1">
                 <AntiforgeryToken />
                 <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
-                <button type="submit" class="nav-link">Abmelden</button>
+                <button type="submit" class="nav-item-link cursor-pointer">Abmelden</button>
             </form>
         </Authorized>
         <NotAuthorized>
-            <NavLink href="Account/Register" class="nav-link">Registrieren</NavLink>
-            <NavLink href="Account/Login" class="nav-link">Anmelden</NavLink>
+            <NavLink href="Account/Login" class="nav-item-link">Anmelden</NavLink>
+            <a href="Account/Register" class="btn btn-primary ml-1">Registrieren</a>
         </NotAuthorized>
     </AuthorizeView>
 </nav>

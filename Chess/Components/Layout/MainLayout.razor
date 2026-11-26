@@ -1,18 +1,23 @@
 ﻿@inherits LayoutComponentBase
 
-<div class="min-h-screen bg-slate-950 text-slate-100">
-    <header class="border-b border-slate-800 bg-slate-900">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-            <a href="/" class="text-lg font-semibold text-slate-100">
-                <span class="text-emerald-500">&#9823;&#xFE0E;</span> ChessPlatform
+<div class="flex min-h-screen flex-col">
+    <header class="sticky top-0 z-40 border-b border-slate-800/80 bg-slate-950/80 backdrop-blur">
+        <div class="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-6 py-3">
+            <a href="/" class="flex items-center gap-2.5 text-lg font-semibold tracking-tight text-white">
+                <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/15 text-xl text-emerald-400 ring-1 ring-emerald-500/30">&#9822;&#xFE0E;</span>
+                ChessPlatform
             </a>
             <NavMenu />
         </div>
     </header>
 
-    <main class="mx-auto max-w-6xl px-6 py-8">
+    <main class="mx-auto w-full max-w-6xl flex-1 px-6 py-10">
         @Body
     </main>
+
+    <footer class="border-t border-slate-800/80 py-6 text-center text-sm text-slate-500">
+        ChessPlatform &middot; gebaut mit C#, Blazor und Tailwind CSS
+    </footer>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
