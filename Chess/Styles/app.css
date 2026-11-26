@@ -62,3 +62,12 @@
     .blazor-error-boundary { background: #b32121; padding: 1rem; color: white; }
     .blazor-error-boundary::after { content: "Ein Fehler ist aufgetreten."; }
 }
+
+@layer components {
+    /* Brett: richtet sich nach Fensterbreite und -höhe, maximal 800px */
+    .board-size { width: min(100%, 800px, max(22rem, calc(100dvh - 9rem))); }
+
+    /* Jedes Feld ist ein Container, die Figur skaliert mit der Feldbreite */
+    .chess-square { container-type: inline-size; }
+    .chess-piece { font-size: 68cqw; line-height: 1; }
+}
