@@ -1,6 +1,6 @@
 ﻿@using Chess.Models
 
-<span class="select-none text-4xl leading-none sm:text-5xl @ColorClass">@Piece.Symbol</span>
+<span class="select-none chess-piece @ColorClass">@Piece.Symbol</span>
 
 @code {
     [Parameter, EditorRequired]
@@ -11,3 +11,4 @@
         ? "text-white [text-shadow:0_0_3px_#000]"
         : "text-slate-900";
 }
+

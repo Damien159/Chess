@@ -3,7 +3,7 @@
 @* Ein Feld des Bretts: reine Darstellung. Farbe und Markierungen kommen über Parameter, *@
 @* ein Klick wird nur nach oben gemeldet (OnClick). Die Entscheidung trifft ChessBoard. *@
 <div @onclick="() => OnClick.InvokeAsync()"
-     class="relative flex aspect-square cursor-pointer items-center justify-center @(IsCheck ? "bg-red-500" : IsLight ? "bg-board-light" : "bg-board-dark") @(IsSelected ? "ring-4 ring-inset ring-yellow-400" : "") @(IsTarget && Piece is not null ? "ring-4 ring-inset ring-red-500/70" : "")">
+     class="chess-square relative flex aspect-square cursor-pointer items-center justify-center @(IsCheck ? "bg-red-500" : IsLight ? "bg-board-light" : "bg-board-dark") @(IsSelected ? "ring-4 ring-inset ring-yellow-400" : "") @(IsTarget && Piece is not null ? "ring-4 ring-inset ring-red-500/70" : "")">
 
     @if (Piece is not null)
     {
@@ -17,12 +17,12 @@
 
     @if (RankLabel is not null)
     {
-        <span class="absolute left-0.5 top-0 text-[10px] font-semibold @LabelColor">@RankLabel</span>
+        <span class="absolute left-0.5 top-0 text-[11px] sm:text-xs font-semibold @LabelColor">@RankLabel</span>
     }
 
     @if (FileLabel is not null)
     {
-        <span class="absolute bottom-0 right-0.5 text-[10px] font-semibold @LabelColor">@FileLabel</span>
+        <span class="absolute bottom-0 right-0.5 text-[11px] sm:text-xs font-semibold @LabelColor">@FileLabel</span>
     }
 </div>
 
@@ -39,3 +39,5 @@
     // Die Beschriftung hat jeweils die andere Brettfarbe, damit sie lesbar bleibt.
     private string LabelColor => IsLight ? "text-board-dark" : "text-board-light";
 }
+
+
