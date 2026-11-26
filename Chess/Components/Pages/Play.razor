@@ -11,98 +11,103 @@
 
 <PageTitle>Spielen</PageTitle>
 
-<div class="flex flex-col items-center gap-5">
-    <h1 class="mb-0">Spielen</h1>
+<div class="flex flex-col items-center gap-8 xl:flex-row xl:items-start xl:justify-center">
 
-    <div class="flex flex-wrap justify-center gap-1 rounded-lg border border-slate-800 bg-slate-900 p-1">
-        <button @onclick="() => SetModeAsync(null)" disabled="@_thinking" class="@ModeClass(null)">
-            Zwei Spieler
-        </button>
-        <button @onclick="() => SetModeAsync(PieceColor.White)" disabled="@_thinking" class="@ModeClass(PieceColor.White)">
-            Gegen Computer (ich: Weiß)
-        </button>
-        <button @onclick="() => SetModeAsync(PieceColor.Black)" disabled="@_thinking" class="@ModeClass(PieceColor.Black)">
-            Gegen Computer (ich: Schwarz)
-        </button>
+    @* Solange der Computer am Zug ist, sind Klicks auf das Brett gesperrt *@
+    <div class="board-size shrink-0 @(IsComputerTurn ? "pointer-events-none" : "")">
+        <ChessBoard @key="_game" Game="_game" Flipped="_flipped" OnMoved="HandleMoved" />
     </div>
 
-    <div class="text-center">
-        <p class="@StatusClass text-lg font-semibold">@StatusText</p>
+    <aside class="flex w-full max-w-xl flex-col gap-4 xl:w-[400px]">
 
-        @if (_saveFailed)
-        {
-            <p class="mt-1 text-sm text-red-400">Die Partie konnte nicht gespeichert werden.</p>
-        }
-        else if (_userId is null)
-        {
-            <p class="mt-1 text-sm text-slate-500">
-                <a href="Account/Login" class="text-emerald-400 hover:underline">Melde dich an</a>,
-                damit deine Partien gespeichert werden.
-            </p>
-        }
-        else if (_storedId is not null)
-        {
-            <p class="mt-1 text-sm text-slate-500">Partie wird gespeichert.</p>
-        }
-    </div>
+        <div class="panel p-5">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Partie</p>
+            <p class="@StatusClass mt-1 text-xl font-semibold">@StatusText</p>
 
-    <div class="flex w-full flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center">
-        @* Solange der Computer am Zug ist, sind Klicks auf das Brett gesperrt *@
-        <div class="w-full max-w-[560px] shrink-0 lg:w-[560px] @(IsComputerTurn ? "pointer-events-none" : "")">
-            <ChessBoard @key="_game" Game="_game" Flipped="_flipped" OnMoved="HandleMoved" />
+            @if (_saveFailed)
+            {
+                <p class="mt-2 text-sm text-red-400">Die Partie konnte nicht gespeichert werden.</p>
+            }
+            else if (_userId is null)
+            {
+                <p class="mt-2 text-sm text-slate-500">
+                    <a href="Account/Login" class="text-emerald-400 hover:underline">Melde dich an</a>,
+                    damit deine Partien gespeichert werden.
+                </p>
+            }
+            else if (_storedId is not null)
+            {
+                <p class="mt-2 text-sm text-slate-500">Partie wird gespeichert.</p>
+            }
         </div>
 
-        <aside class="flex w-full max-w-[560px] flex-col gap-4 lg:w-80">
-            <CapturedPieces Label="Weiß hat geschlagen" Pieces="_game.GetCaptured(PieceColor.Black)" />
-            <CapturedPieces Label="Schwarz hat geschlagen" Pieces="_game.GetCaptured(PieceColor.White)" />
-
-            <MoveList Moves="_game.Moves" Result="_game.Result" />
-
-            @if (!_game.IsOver && _game.DrawOfferedBy is { } offerer)
-            {
-                <div class="rounded-xl border border-yellow-500/40 bg-slate-900 p-3 text-sm">
-                    <p class="mb-2 text-yellow-300">@ColorName(offerer) bietet Remis an.</p>
-                    <div class="flex gap-2">
-                        <button @onclick="AcceptDraw" class="btn btn-primary">Annehmen</button>
-                        <button @onclick="DeclineDraw" class="btn btn-secondary">Ablehnen</button>
-                    </div>
-                </div>
-            }
-
-            <div class="flex flex-wrap gap-2">
-                <button @onclick="() => _flipped = !_flipped" class="btn btn-secondary">
-                    Brett drehen
+        <div class="panel p-5">
+            <p class="mb-3 text-xs font-medium uppercase tracking-wider text-slate-500">Spielmodus</p>
+            <div class="flex flex-col gap-2">
+                <button @onclick="() => SetModeAsync(null)" disabled="@_thinking" class="@ModeClass(null)">
+                    <span class="font-medium">Zwei Spieler</span>
+                    <span class="text-xs text-slate-400">Am selben Bildschirm</span>
                 </button>
-                <button @onclick="StartNewGameAsync" disabled="@_thinking" class="btn btn-primary">
-                    Neue Partie
+                <button @onclick="() => SetModeAsync(PieceColor.White)" disabled="@_thinking" class="@ModeClass(PieceColor.White)">
+                    <span class="font-medium">Gegen Computer</span>
+                    <span class="text-xs text-slate-400">Du spielst Weiß</span>
+                </button>
+                <button @onclick="() => SetModeAsync(PieceColor.Black)" disabled="@_thinking" class="@ModeClass(PieceColor.Black)">
+                    <span class="font-medium">Gegen Computer</span>
+                    <span class="text-xs text-slate-400">Du spielst Schwarz</span>
                 </button>
             </div>
+        </div>
 
-            @if (!_game.IsOver && !_thinking)
-            {
-                <div class="flex flex-wrap items-center gap-2">
-                    @* Remis anbieten gibt es nur zwischen zwei Menschen *@
-                    @if (!VsComputer && _game.DrawOfferedBy is null)
-                    {
-                        <button @onclick="OfferDraw" class="btn btn-secondary">Remis anbieten</button>
-                    }
+        <CapturedPieces Label="Weiß hat geschlagen" Pieces="_game.GetCaptured(PieceColor.Black)" />
+        <CapturedPieces Label="Schwarz hat geschlagen" Pieces="_game.GetCaptured(PieceColor.White)" />
 
-                    @if (_confirmResign)
-                    {
-                        <span class="text-sm text-slate-300">@ColorName(ResignColor) wirklich aufgeben?</span>
-                        <button @onclick="Resign" class="btn btn-danger">Ja</button>
-                        <button @onclick="() => _confirmResign = false" class="btn btn-secondary">Abbrechen</button>
-                    }
-                    else
-                    {
-                        <button @onclick="() => _confirmResign = true" class="btn btn-secondary text-red-300">
-                            @ColorName(ResignColor) gibt auf
-                        </button>
-                    }
+        <MoveList Moves="_game.Moves" Result="_game.Result" />
+
+        @if (!_game.IsOver && _game.DrawOfferedBy is { } offerer)
+        {
+            <div class="rounded-xl border border-yellow-500/40 bg-yellow-500/10 p-4 text-sm">
+                <p class="mb-3 text-yellow-300">@ColorName(offerer) bietet Remis an.</p>
+                <div class="flex gap-2">
+                    <button @onclick="AcceptDraw" class="btn btn-primary">Annehmen</button>
+                    <button @onclick="DeclineDraw" class="btn btn-secondary">Ablehnen</button>
                 </div>
-            }
-        </aside>
-    </div>
+            </div>
+        }
+
+        <div class="flex flex-wrap gap-2">
+            <button @onclick="StartNewGameAsync" disabled="@_thinking" class="btn btn-primary disabled:opacity-60">
+                Neue Partie
+            </button>
+            <button @onclick="() => _flipped = !_flipped" class="btn btn-secondary">
+                Brett drehen
+            </button>
+        </div>
+
+        @if (!_game.IsOver && !_thinking)
+        {
+            <div class="flex flex-wrap items-center gap-2">
+                @* Remis anbieten gibt es nur zwischen zwei Menschen *@
+                @if (!VsComputer && _game.DrawOfferedBy is null)
+                {
+                    <button @onclick="OfferDraw" class="btn btn-secondary">Remis anbieten</button>
+                }
+
+                @if (_confirmResign)
+                {
+                    <span class="text-sm text-slate-300">@ColorName(ResignColor) wirklich aufgeben?</span>
+                    <button @onclick="Resign" class="btn btn-danger">Ja</button>
+                    <button @onclick="() => _confirmResign = false" class="btn btn-secondary">Abbrechen</button>
+                }
+                else
+                {
+                    <button @onclick="() => _confirmResign = true" class="btn btn-secondary text-red-300">
+                        @ColorName(ResignColor) gibt auf
+                    </button>
+                }
+            </div>
+        }
+    </aside>
 </div>
 
 @code {
@@ -231,9 +236,11 @@
         }
     }
 
-    private string ModeClass(PieceColor? mode) => _humanColor == mode
-        ? "rounded-md bg-slate-700 px-3 py-1.5 text-sm text-white disabled:opacity-50"
-        : "rounded-md px-3 py-1.5 text-sm text-slate-400 transition-colors hover:text-slate-100 disabled:opacity-50";
+    private string ModeClass(PieceColor? mode) =>
+        "flex flex-col items-start rounded-xl border px-4 py-2.5 text-left text-sm transition disabled:opacity-60 " +
+        (_humanColor == mode
+            ? "border-emerald-500/60 bg-emerald-500/10 text-white"
+            : "border-slate-800 bg-slate-900/60 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60");
 
     private static string ColorName(PieceColor color) => color == PieceColor.White ? "Weiß" : "Schwarz";
 
@@ -258,8 +265,7 @@
     {
         GameStatus.Check => "text-red-400",
         GameStatus.Checkmate or GameStatus.Resigned => "text-emerald-400",
-        GameStatus.Ongoing => "text-slate-300",
+        GameStatus.Ongoing => "text-slate-200",
         _ => "text-yellow-400"
     };
 }
-
