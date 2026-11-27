@@ -1,28 +1,33 @@
-﻿@page "/"
+@page "/"
 
 <PageTitle>ChessPlatform</PageTitle>
 
 <section class="mx-auto grid max-w-6xl items-center gap-12 py-10 lg:grid-cols-2 lg:py-16">
     <div>
-        <h1 class="mb-0 text-5xl leading-[1.05] sm:text-6xl">Schach im Browser.</h1>
+        <h1 class="mb-0 text-5xl leading-[1.05] sm:text-6xl">Komm, eine Partie?</h1>
 
-        <p class="mt-6 max-w-md text-lg leading-relaxed text-slate-400">
-            Spiel zu zweit an einem Bildschirm oder gegen den Computer.
-            Mit Konto wird jede Partie gespeichert und kann Zug für Zug nachgespielt werden.
+        <p class="mt-6 max-w-md text-lg leading-relaxed text-slate-300">
+            Such dir eine Farbe aus und zieh. Du kannst gegen den Computer spielen
+            oder gegen jemanden, der neben dir sitzt. Ein Konto brauchst du dafür nicht.
         </p>
 
-        <div class="mt-8 flex flex-wrap gap-3">
-            <a href="play" class="btn btn-lg btn-primary">Neue Partie</a>
+        <div class="mt-8 flex flex-wrap items-center gap-4">
+            <a href="play" class="btn btn-lg btn-primary">Partie starten</a>
 
             <AuthorizeView>
                 <Authorized>
-                    <a href="games" class="btn btn-lg btn-secondary">Meine Partien</a>
+                    <a href="games" class="text-slate-300 underline decoration-slate-600 underline-offset-4 hover:text-white">Meine Partien ansehen</a>
                 </Authorized>
                 <NotAuthorized>
-                    <a href="Account/Register" class="btn btn-lg btn-secondary">Konto anlegen</a>
+                    <a href="Account/Register" class="text-slate-300 underline decoration-slate-600 underline-offset-4 hover:text-white">Konto anlegen</a>
                 </NotAuthorized>
             </AuthorizeView>
         </div>
+
+        <p class="mt-8 max-w-md text-sm leading-relaxed text-slate-500">
+            Mit Konto wird jede Partie nach jedem Zug gespeichert. So kannst du sie später
+            Zug für Zug durchgehen und sehen, wo es gekippt ist.
+        </p>
     </div>
 
     <figure class="mx-auto w-full max-w-md lg:max-w-none">
@@ -42,7 +47,7 @@
                 }
             }
         </div>
-        <figcaption class="mt-3 text-sm text-slate-500">Anderssen – Kieseritzky, London 1851. Weiß ist am Zug und hat gerade matt gesetzt.</figcaption>
+        <figcaption class="mt-3 text-sm text-slate-500">Endstellung der "Unsterblichen Partie": Anderssen – Kieseritzky, London 1851. Weiß setzt matt.</figcaption>
     </figure>
 </section>
 
