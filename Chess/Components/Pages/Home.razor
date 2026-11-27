@@ -2,68 +2,52 @@
 
 <PageTitle>ChessPlatform</PageTitle>
 
-<section class="mx-auto w-full max-w-[44rem] py-8">
-    <p class="mb-4 text-2xl font-bold tracking-tight text-white">Zieh eine Figur.</p>
+<section class="mx-auto grid max-w-6xl items-center gap-12 py-10 lg:grid-cols-2 lg:py-16">
+    <div>
+        <h1 class="mb-0 text-5xl leading-[1.05] sm:text-6xl">Schach im Browser.</h1>
 
-    <div class="grid grid-cols-8 shadow-2xl shadow-black/60 ring-8 ring-slate-800">
-        @for (var r = 0; r < 8; r++)
-        {
-            @for (var c = 0; c < 8; c++)
+        <p class="mt-6 max-w-md text-lg leading-relaxed text-slate-400">
+            Spiel zu zweit an einem Bildschirm oder gegen den Computer.
+            Mit Konto wird jede Partie gespeichert und kann Zug für Zug nachgespielt werden.
+        </p>
+
+        <div class="mt-8 flex flex-wrap gap-3">
+            <a href="play" class="btn btn-lg btn-primary">Neue Partie</a>
+
+            <AuthorizeView>
+                <Authorized>
+                    <a href="games" class="btn btn-lg btn-secondary">Meine Partien</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a href="Account/Register" class="btn btn-lg btn-secondary">Konto anlegen</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+
+    <figure class="mx-auto w-full max-w-md lg:max-w-none">
+        <div class="grid aspect-square w-full grid-cols-8 overflow-hidden shadow-2xl shadow-black/50 ring-8 ring-slate-800">
+            @for (var r = 0; r < 8; r++)
             {
-                var p = _b[r, c];
-                var name = $"{(char)('a' + c)}{8 - r}";
-                var bg = (r + c) % 2 == 1 ? "bg-board-dark" : "bg-board-light";
-                var tone = char.IsUpper(p) ? "text-white" : "text-slate-950";
-                var shadow = char.IsUpper(p) ? "text-shadow:0 1px 2px rgb(0 0 0 / .55);" : "";
-
-                @if (name == "e2")
+                @for (var c = 0; c < 8; c++)
                 {
-                    <a href="play" title="Neue Partie" class="chess-square group relative flex aspect-square items-center justify-center ring-2 ring-inset ring-emerald-400 @bg">
-                        <span class="chess-piece select-none @tone" style="@shadow">@Glyph(p)</span>
-                        <span class="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-white px-2 py-1 text-xs font-semibold text-slate-950 opacity-0 group-hover:opacity-100">Neue Partie</span>
-                    </a>
-                }
-                else if (name == "g1")
-                {
-                    <AuthorizeView>
-                        <Authorized>
-                            <a href="games" title="Meine Partien" class="chess-square group relative flex aspect-square items-center justify-center ring-2 ring-inset ring-emerald-400 @bg">
-                                <span class="chess-piece select-none @tone" style="@shadow">@Glyph(p)</span>
-                                <span class="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-white px-2 py-1 text-xs font-semibold text-slate-950 opacity-0 group-hover:opacity-100">Meine Partien</span>
-                            </a>
-                        </Authorized>
-                        <NotAuthorized>
-                            <a href="Account/Register" title="Konto anlegen" class="chess-square group relative flex aspect-square items-center justify-center ring-2 ring-inset ring-emerald-400 @bg">
-                                <span class="chess-piece select-none @tone" style="@shadow">@Glyph(p)</span>
-                                <span class="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded bg-white px-2 py-1 text-xs font-semibold text-slate-950 opacity-0 group-hover:opacity-100">Konto anlegen</span>
-                            </a>
-                        </NotAuthorized>
-                    </AuthorizeView>
-                }
-                else
-                {
-                    <div class="chess-square flex aspect-square items-center justify-center @bg">
+                    var p = _b[r, c];
+                    <div class="chess-square flex aspect-square items-center justify-center @((r + c) % 2 == 1 ? "bg-board-dark" : "bg-board-light")">
                         @if (p != '\0')
                         {
-                            <span class="chess-piece select-none @tone" style="@shadow">@Glyph(p)</span>
+                            <span class="chess-piece select-none @(char.IsUpper(p) ? "text-white" : "text-slate-950")"
+                                  style="@(char.IsUpper(p) ? "text-shadow:0 1px 2px rgb(0 0 0 / .55);" : "")">@Glyph(p)</span>
                         }
                     </div>
                 }
             }
-        }
-    </div>
-
-    <p class="mt-5 text-sm text-slate-400">
-        <span class="text-white">Bauer e2</span> startet eine Partie.
-        <AuthorizeView>
-            <Authorized><span class="text-white">Springer g1</span> öffnet deine Partien.</Authorized>
-            <NotAuthorized><span class="text-white">Springer g1</span> legt ein Konto an.</NotAuthorized>
-        </AuthorizeView>
-    </p>
+        </div>
+        <figcaption class="mt-3 text-sm text-slate-500">Anderssen – Kieseritzky, London 1851. Weiß ist am Zug und hat gerade matt gesetzt.</figcaption>
+    </figure>
 </section>
 
 @code {
-    private readonly char[,] _b = Parse("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+    private readonly char[,] _b = Parse("r1bk3r/p2pBpNp/n4n2/1p1NP2P/6P1/3P4/P1P1K3/q5b1");
 
     private static char[,] Parse(string fen)
     {
