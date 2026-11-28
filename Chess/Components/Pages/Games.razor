@@ -47,6 +47,10 @@
                             <td class="px-4 py-2">@StatusText(game.Status)</td>
                             <td class="px-4 py-2 text-right">
                                 <a href="games/@game.Id" class="text-emerald-400 hover:underline">Ansehen</a>
+                                @if (game.Result is null)
+                                {
+                                    <a href="play/@game.Id" class="ml-4 text-emerald-400 hover:underline">Fortsetzen</a>
+                                }
                             </td>
                         </tr>
                     }
