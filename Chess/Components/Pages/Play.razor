@@ -1,4 +1,5 @@
 ﻿@page "/play"
+@page "/play/{GameId:int}"
 @rendermode InteractiveServer
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
@@ -139,6 +140,47 @@
     {
         var state = await AuthStateProvider.GetAuthenticationStateAsync();
         _userId = state.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        await TryResumeAsync();
+    }
+
+    // Id einer gespeicherten Partie, wenn die Seite über /play/{Id} aufgerufen wurde
+    [Parameter]
+    public int? GameId { get; set; }
+
+    private bool _resumeFailed;
+
+    // Lädt eine unfertige Partie des angemeldeten Benutzers und spielt sie bis zum letzten Zug nach.
+    // Fremde, unbekannte oder bereits beendete Partien werden nicht geladen, dann bleibt es bei einer neuen Partie.
+    private async Task TryResumeAsync()
+    {
+        if (GameId is not { } id || _userId is null)
+        {
+            return;
+        }
+
+        var stored = await Repository.GetGameAsync(id, _userId);
+
+        if (stored is null || stored.Result is not null)
+        {
+            _resumeFailed = true;
+            return;
+        }
+
+        _game = stored.ToGame();
+        _storedId = stored.Id;
+        _humanColor = Enum.TryParse<PieceColor>(stored.HumanColor, out var human) ? human : null;
+        _flipped = _humanColor == PieceColor.Black;
+    }
+
+    // Läuft nur im interaktiven Betrieb, nicht beim Vorab-Rendern. Ist bei einer fortgesetzten
+    // Partie gegen den Computer dieser am Zug, macht er jetzt seinen Zug.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && IsComputerTurn)
+        {
+            await PlayComputerMoveAsync();
+            StateHasChanged();
+        }
     }
 
     // Moduswechsel startet immer eine neue Partie. Spielt der Mensch Schwarz, wird das Brett
