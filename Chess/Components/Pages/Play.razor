@@ -25,6 +25,11 @@
             <p class="text-xs font-medium uppercase tracking-wider text-slate-500">Partie</p>
             <p class="@StatusClass mt-1 text-xl font-semibold">@StatusText</p>
 
+            @if (_resumeFailed)
+            {
+                <p class="mt-2 text-sm text-yellow-300">Diese Partie kann nicht fortgesetzt werden. Es läuft eine neue Partie.</p>
+            }
+
             @if (_saveFailed)
             {
                 <p class="mt-2 text-sm text-red-400">Die Partie konnte nicht gespeichert werden.</p>
@@ -195,6 +200,7 @@
     private async Task StartNewGameAsync()
     {
         _game = new Game();
+        _resumeFailed = false;
         _storedId = null;
         _saveFailed = false;
         _confirmResign = false;
