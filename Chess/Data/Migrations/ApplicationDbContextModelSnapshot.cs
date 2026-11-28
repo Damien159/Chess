@@ -99,6 +99,9 @@ namespace Chess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("HumanColor")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Result")
                         .HasColumnType("nvarchar(max)");
 

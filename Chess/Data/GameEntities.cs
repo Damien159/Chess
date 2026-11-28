@@ -17,6 +17,10 @@ public class StoredGame
     // 1-0, 0-1, 1/2-1/2 oder null, solange die Partie läuft
     public string? Result { get; set; }
 
+    // Farbe des Menschen bei einer Partie gegen den Computer ("White" oder "Black").
+    // null bedeutet: zwei Spieler am selben Bildschirm.
+    public string? HumanColor { get; set; }
+
     public List<StoredMove> Moves { get; set; } = new();
 }
 
