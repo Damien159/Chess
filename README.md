@@ -34,6 +34,7 @@ Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET
 - Remisregeln: dreifache Stellungswiederholung, 50-Züge-Regel, zu wenig Material
 - Zugliste in echter Schachnotation (zum Beispiel `e4`, `Nf3`, `Bxc6`, `O-O`, `Qh4#`)
 - Anzeige der geschlagenen Figuren
+- Der letzte Zug wird auf dem Brett hervorgehoben
 - Aufgeben (mit Nachfrage) und Remis anbieten / annehmen / ablehnen
 - Brett drehen und neue Partie starten
 - Spielmodus: zu zweit an einem Bildschirm oder gegen den Computer (er spielt zufällige legale Züge, ich wähle Weiß oder Schwarz)
@@ -43,6 +44,7 @@ Eine Schachplattform im Browser, die ich Schritt für Schritt mit **Blazor (.NET
 - Angemeldete Benutzer: Die Partie wird nach jedem Zug automatisch in der Datenbank gespeichert
 - Seite **„Meine Partien“** mit Datum, Anzahl der Züge, Ergebnis und Ausgang
 - **Partie ansehen:** Ich kann mit Anfang / Zurück / Vor / Ende durch eine gespeicherte Partie gehen
+- **Partie fortsetzen:** Unfertige Partien lassen sich aus „Meine Partien“ weiterspielen, auch gegen den Computer
 
 **Qualitätssicherung**
 - Automatische Unit-Tests (xUnit) für Zugregeln, Sonderzüge, Spielende und den Computergegner, siehe [Tests](#tests)
@@ -183,6 +185,9 @@ Der Computer ist eine eigene Klasse `ComputerPlayer` im Ordner `Models`. Sie bek
 
 ### Schritt 9: Design aufräumen
 Ich habe Buttons, Navigation und Karten auf gemeinsame Klassen umgestellt und eine neue Startseite gebaut. Dort steht ein echtes Brett als Vorschau: Die Stellung wird mit der Spiellogik gespielt und ist kein Bild.
+
+### Schritt 10: Partie fortsetzen und letzten Zug markieren
+Eine unfertige Partie lässt sich aus „Meine Partien“ weiterspielen. Dafür baut `StoredGame.ToGame` die Partie aus den gespeicherten Zügen mit der echten Schachlogik wieder auf, genauso wie bei „Partie ansehen“. Damit eine fortgesetzte Partie gegen den Computer nicht plötzlich eine Zwei-Spieler-Partie wird, speichert die Datenbank jetzt auch die Farbe des Menschen (neue Spalte `HumanColor`, hinzugefügt per Migration). Nebenbei wird der letzte Zug auf dem Brett hervorgehoben, auch beim Durchklicken einer gespeicherten Partie.
 
 ---
 
@@ -367,8 +372,6 @@ Während der Entwicklung kann `npm run css:watch` im Ordner `Chess` laufen, dami
 **Bekannte Einschränkungen**
 - Der Computer spielt nur zufällige legale Züge und ist deshalb sehr schwach.
 - Bei „Zwei Spieler“ sitzen beide am selben Bildschirm.
-- Angefangene Partien lassen sich noch nicht fortsetzen, sie erscheinen als „Unvollendet“ und sind nur zum Ansehen da.
-- Die Datenbank speichert nicht, ob der Gegner ein Computer war.
 - Die 50-Züge-Regel greift automatisch, im echten Schach muss man sie beantragen.
 - Keine Schachuhr.
 
@@ -378,7 +381,6 @@ Während der Entwicklung kann `npm run css:watch` im Ordner `Chess` laufen, dami
 
 - **Computergegner mit Minimax:** Stellungen nach Materialwert bewerten, ein paar Züge vorausrechnen, Stärke wählbar
 - **Online-Partien** zwischen zwei angemeldeten Benutzern (SignalR), mit Einladung, Lobby und getrennten Buttons für Aufgeben und Remis
-- Angefangene Partien fortsetzen
 - Schachuhr
 - Wertungen und Statistiken
 - Mehr Tests: Patt, 50-Züge-Regel, zu wenig Material, Notation bei Mehrdeutigkeit
