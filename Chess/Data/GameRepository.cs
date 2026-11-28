@@ -11,7 +11,7 @@ public record GameSummary(int Id, DateTime CreatedAt, string? Result, string Sta
 public class GameRepository(IServiceScopeFactory scopeFactory)
 {
     // Legt die Partie an (storedId = null) oder hängt neue Züge an und aktualisiert den Status.
-    public async Task<int> SaveAsync(int? storedId, string userId, Game game)
+    public async Task<int> SaveAsync(int? storedId, string userId, Game game, PieceColor? humanColor = null)
     {
         using var scope = scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -26,7 +26,7 @@ public class GameRepository(IServiceScopeFactory scopeFactory)
         }
         else
         {
-            stored = new StoredGame { UserId = userId, CreatedAt = DateTime.UtcNow };
+            stored = new StoredGame { UserId = userId, CreatedAt = DateTime.UtcNow, HumanColor = humanColor?.ToString() };
             db.Games.Add(stored);
         }
 
