@@ -16,6 +16,7 @@
                              IsSelected="IsSelected(r, f)"
                              IsTarget="IsTarget(r, f)"
                              IsCheck="IsKingInCheck(r, f)"
+                             IsLastMove="IsLastMove(r, f)"
                              RankLabel="@(col == 0 ? (8 - r).ToString() : null)"
                              FileLabel="@(row == 7 ? ((char)('a' + f)).ToString() : null)"
                              OnClick="() => SelectSquare(r, f)" />
@@ -77,6 +78,19 @@
 
     private bool IsSelected(int rank, int file) =>
         _selected is { } s && s.Rank == rank && s.File == file;
+
+    // Start- und Zielfeld des letzten Zugs werden hervorgehoben
+    private bool IsLastMove(int rank, int file)
+    {
+        if (Game.Moves.Count == 0)
+        {
+            return false;
+        }
+
+        var last = Game.Moves[^1];
+        var square = new Square(rank, file);
+        return last.From == square || last.To == square;
+    }
 
     private bool IsTarget(int rank, int file) =>
         _targets.Contains(new Square(rank, file));
