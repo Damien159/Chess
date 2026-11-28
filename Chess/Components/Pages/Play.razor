@@ -226,7 +226,7 @@
 
         try
         {
-            _storedId = await Repository.SaveAsync(_storedId, _userId, _game);
+            _storedId = await Repository.SaveAsync(_storedId, _userId, _game, _humanColor);
             _saveFailed = false;
         }
         catch (Exception ex)
