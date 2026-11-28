@@ -112,20 +112,7 @@ else
     }
 
     // Spielt die ersten n Halbzüge auf einem neuen Spiel nach
-    private Game Replay(int ply)
-    {
-        var game = new Game();
-
-        foreach (var move in _stored!.Moves.OrderBy(m => m.Ply).Take(ply))
-        {
-            game.TryMove(
-                new Square(move.FromRank, move.FromFile),
-                new Square(move.ToRank, move.ToFile),
-                move.Promotion is { } promotion ? (PieceType?)promotion : null);
-        }
-
-        return game;
-    }
+    private Game Replay(int ply) => _stored!.ToGame(ply);
 
     private string CurrentMoveText
     {
